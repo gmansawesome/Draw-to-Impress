@@ -51,8 +51,8 @@ const HostRoom = ({ user }) => {
       }
       resize();
   
-      // window.addEventListener('resize', resize);
-      // return () => window.removeEventListener('resize', resize);
+      window.addEventListener('resize', resize);
+      return () => window.removeEventListener('resize', resize);
     }, []);
   
     const startDrawing = e => {
