@@ -240,6 +240,69 @@ def check_active_game():
         })
     return jsonify({"inGame": False})
 
+@app.route('/game/<string:gamecode>', methods=['GET'])
+def check_game(gamecode):
+    game = Game.query.filter_by(code=gamecode).first()
+    if not game:
+        return jsonify({
+            "success": False,
+            "message": "Invalid game code"
+        })
+
+    game_session_objs = game.players
+    if not game_session_objs:
+        return jsonify({
+            "success": False,
+            "players": []
+        })
+
+    players = []
+    for game_session in game_session_objs:
+        player = User.query.get(game_session.player_id)
+        if not player:
+            continue
+
+        players.append({
+            "id": player.id,
+            "username": player.username
+        })
+
+    return jsonify({
+        "success": True,
+        "players": players
+    })
+
+@app.route('/game/<string:username>/<string:gamecode>', methods=['DELETE'])
+def leave_game(username, gamecode):
+    user = User.query.filter_by(username=username).first()
+    if not (user):
+        return jsonify({
+            "success": False,
+            "message": "User not found"
+        })
+
+    game = Game.query.filter_by(code=gamecode).first()
+    if not game:
+        return jsonify({
+            "success": False,
+            "message": "Invalid game code"
+        })
+
+    game_session = GameSession.query.filter_by(player_id=user.id, game_id=game.id).first()
+    if not game_session:
+        return jsonify({
+            "success": False,
+            "message": "Game session entry not found"
+        })
+    
+    db.session.delete(game_session)
+    db.session.commit()
+    
+    return jsonify({
+        "success": True,
+        "message": "Successfully left the game"
+    })
+
 def generate_game_code():
     characters = string.ascii_uppercase+string.digits
     return ''.join(random.choices(characters, k=8))
