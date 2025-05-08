@@ -294,9 +294,15 @@ def leave_game(username, gamecode):
             "success": False,
             "message": "Game session entry not found"
         })
-    
-    db.session.delete(game_session)
-    db.session.commit()
+
+    if (game.host_id == user.id):
+        for session in game.players:
+            db.session.delete(session)
+        db.session.delete(game)
+        db.session.commit()
+    else:
+        db.session.delete(game_session)
+        db.session.commit()
     
     return jsonify({
         "success": True,

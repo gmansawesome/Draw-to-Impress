@@ -7,6 +7,7 @@ import Logout from './components/logout';
 import Lobby from './components/lobby';
 import PrivateRoute from './components/privateroute';
 import PlayerRoom from './components/playerroom';
+import HostRoom from './components/hostroom';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -61,7 +62,7 @@ function AppContent() {
         <Route path="/" element={<Login onLogin={handleLogin} />} />
         <Route path="/signup" element={<Signup/>} />
         <Route path="/lobby" element={<PrivateRoute user={user}> <Lobby user={user} /> </PrivateRoute>}/>        
-        {/* <Route path="/:username/host/:gameCode" element={<PrivateRoute user={user}> <HostRoom user={user} /> </PrivateRoute>} /> */}
+        <Route path="/:username/host/:gameCode" element={<PrivateRoute user={user}> <HostRoom user={user} /> </PrivateRoute>} />
         <Route path="/:username/player/:gameCode" element={<PrivateRoute user={user}> <PlayerRoom user={user} /> </PrivateRoute>} />
       </Routes>
 
