@@ -8,6 +8,7 @@ import Lobby from './components/lobby';
 import PrivateRoute from './components/privateroute';
 import PlayerRoom from './components/playerroom';
 import HostRoom from './components/hostroom';
+import socket from './components/socket';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -26,13 +27,16 @@ function AppContent() {
       const data = await response.json();
   
       if (data.inGame) {
-        const path =
-          data.role === 'host'
-            ? `/${userData.username}/host/${data.gameCode}`
-            : `/${userData.username}/player/${data.gameCode}`;
-  
-        navigate(path);
-      } else {
+        socket.emit("rejoin_game", { userId: userData.id, code: data.gameCode });
+
+        socket.once("game_state", (state) => {
+          const path = state.role === 'host'
+            ? `/${userData.username}/host/${state.gameCode}`
+            : `/${userData.username}/player/${state.gameCode}`;
+          navigate(path);
+        });
+      } 
+      else {
         navigate('/lobby');
       }
   

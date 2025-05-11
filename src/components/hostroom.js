@@ -1,37 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import socket from './socket';
 
 const HostRoom = ({ user }) => {
   const { username, gameCode } = useParams();
   const [players, setPlayers] = useState([]);
   const navigate = useNavigate();
 
-
-  const fetchPlayers = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/game/${gameCode}`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-
-      const data = await response.json();
-      if (data.success) {
-        setPlayers(data.players);
-      } else {
-        navigate(`/lobby`);
-        console.error(data.message || "Failed to fetch players: Assume Game Closed");
-      }
-    } catch (err) {
-      console.error("Error fetching players:", err);
-    }
-  };
-
-  // Checking every 5 seconds
   useEffect(() => {
-    fetchPlayers();
-    const interval = setInterval(fetchPlayers, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    socket.emit('rejoin_game', {
+      userId: user.id,
+      code: gameCode,
+    });
+
+    socket.on('player_list', (updatedPlayers) => {
+      setPlayers(updatedPlayers);
+    });
+
+    // Optional: Listen for game state if you want to start the game live
+    socket.on('game_state', (data) => {
+      if (data.state === 'whiteboard') {
+        navigate(`/${username}/host/${gameCode}/whiteboard`);
+      }
+    });
+
+    socket.on('game_closed', () => {
+      navigate('/lobby');
+    });
+
+    return () => {
+      socket.off('player_list');
+      socket.off('game_state');
+    };
+  }, [user.id, gameCode, username, navigate]);
 
   const handleLeaveGame = async () => {
     try {
@@ -42,6 +43,7 @@ const HostRoom = ({ user }) => {
   
       const data = await response.json();
       if (data.success) {
+        socket.emit('leave_room', { gameCode });
         navigate(`/lobby`);
       } else {
         alert(data.message || 'Failed to leave game.');
@@ -53,22 +55,10 @@ const HostRoom = ({ user }) => {
   };
 
   const handleStartGame = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/game/${username}/${gameCode}`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-  
-      const data = await response.json();
-      if (data.success) {
-        // navigate(`/lobby`); whiteboard
-      } else {
-        alert(data.message || 'Failed to start game.');
-      }
-    } catch (err) {
-      console.error("Error starting game:", err);
-      alert("Server error. Try again later.");
-    }
+    socket.emit('start_game', {
+      userId: user.id,
+      gameCode: gameCode
+    });
   };
 
   return (

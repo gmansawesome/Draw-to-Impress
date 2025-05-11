@@ -1,3 +1,6 @@
+import eventlet
+eventlet.monkey_patch()
+
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
@@ -6,6 +9,7 @@ from flask_admin.contrib.sqla import ModelView
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
 import string
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 class UserView(ModelView):
     column_hide_backrefs = False
@@ -26,6 +30,7 @@ CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_cred
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -181,6 +186,10 @@ def create_game():
         "message": "You have created the game!"
     })
 
+def generate_game_code():
+    characters = string.ascii_uppercase+string.digits
+    return ''.join(random.choices(characters, k=8))
+
 @app.route('/join-game', methods=['POST'])
 def join_game():
     data = request.get_json()
@@ -232,7 +241,7 @@ def check_active_game():
 
     session = GameSession.query.filter_by(player_id=user_id).first()
     if session:
-        game = Game.query.get(session.game_id)
+        game = db.session.get(Game, session.game_id)
         return jsonify({
             "inGame": True,
             "gameCode": game.code,
@@ -240,13 +249,27 @@ def check_active_game():
         })
     return jsonify({"inGame": False})
 
-@app.route('/game/<string:gamecode>', methods=['GET'])
-def check_game(gamecode):
+@app.route('/game/<string:username>/<string:gamecode>', methods=['GET'])
+def check_game(username, gamecode):
     game = Game.query.filter_by(code=gamecode).first()
     if not game:
         return jsonify({
             "success": False,
             "message": "Invalid game code"
+        })
+
+    user = User.query.filter_by(username=username).first()
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "User not found"
+        })
+
+    user_gs = GameSession.query.filter_by(player_id=user.id, game_id=game.id).first()
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "User does not belong to game"
         })
 
     game_session_objs = game.players
@@ -258,7 +281,7 @@ def check_game(gamecode):
 
     players = []
     for game_session in game_session_objs:
-        player = User.query.get(game_session.player_id)
+        player = db.session.get(User, game_session.player_id)
         if not player:
             continue
 
@@ -300,10 +323,18 @@ def leave_game(username, gamecode):
             db.session.delete(session)
         db.session.delete(game)
         db.session.commit()
+        
+        socketio.emit("game_closed", {"gameCode": game.code}, room=game.code)
     else:
         db.session.delete(game_session)
         db.session.commit()
-    
+        
+        updated_players = [
+            {"id": gs.player.id, "username": gs.player.username}
+            for gs in game.players if gs.player is not None
+        ]
+        socketio.emit("player_list", updated_players, room=game.code)
+
     return jsonify({
         "success": True,
         "message": "Successfully left the game"
@@ -313,8 +344,65 @@ def generate_game_code():
     characters = string.ascii_uppercase+string.digits
     return ''.join(random.choices(characters, k=8))
 
-admin = Admin(app)
+@socketio.on('leave_room')
+def handle_leave_room(data):
+    room = data.get('gameCode')
+    leave_room(room)
 
+@socketio.on("rejoin_game")
+def rejoin_game(data):
+    user_id = data.get("userId")
+    game_code = data.get("code")
+
+    game = Game.query.filter_by(code=game_code).first()
+    if not game:
+        emit("rejoin_failed", {"message": "Game not found"})
+        return
+
+    session = GameSession.query.filter_by(player_id=user_id, game_id=game.id).first()
+    if not session:
+        emit("rejoin_failed", {"message": "User not in this game"})
+        return
+
+    join_room(game.code)
+
+    emit("game_state", {
+        "gameCode": game.code,
+        "role": "host" if game.host_id == user_id else "player",
+        "state": game.state
+    }, to=request.sid)
+
+    if game.state == "lobby":
+        players = [
+            {"id": gs.player.id, "username": gs.player.username}
+            for gs in game.players if gs.player is not None
+        ]
+        emit("player_list", players, room=game.code)
+
+@socketio.on("start_game")
+def handle_start_game(data):
+    user_id = data.get("userId")
+    game_code = data.get("gameCode")
+
+    game = Game.query.filter_by(code=game_code).first()
+    if not game:
+        socketio.emit("error", {"message": "Game not found"}, to=request.sid)
+        return
+
+    if game.host_id != user_id:
+        socketio.emit("error", {"message": "Only the host can start the game"}, to=request.sid)
+        return
+
+    game.state = "whiteboard"
+    db.session.commit()
+
+    # Notify all players
+    socketio.emit("game_state", {
+        "gameCode": game.code,
+        "state": game.state
+    }, room=game.code)
+
+admin = Admin(app)
 admin.add_view(UserView(User, db.session))
 admin.add_view(GameView(Game, db.session))
 admin.add_view(GameSessionView(GameSession, db.session))
@@ -322,4 +410,4 @@ admin.add_view(PromptView(Prompt, db.session))
 
 if __name__ == '__main__':
     main()
-    app.run(debug=True)
+    socketio.run(app, debug=True)
