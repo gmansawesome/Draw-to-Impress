@@ -11,10 +11,12 @@ const HostRoom = ({ user }) => {
     const VcontextRef = useRef(null);
     const strokesRef = useRef([]);
     const isDrawingRef = useRef(false);
+    const [isErasing, setIsErasing] = useState(false);
     const [color, setColor] = useState('#000000');
     const [lineWidth, setLineWidth] = useState(2);
   
     const showCanvas = () => {
+      
       const canvas = canvasRef.current;
       const visible = VcontextRef.current;
       if (!visible)return;
@@ -34,55 +36,104 @@ const HostRoom = ({ user }) => {
           });
           visible.stroke();
       });
+
+      strokesRef.current.forEach(stroke => {
+        const { type, color: strokeColor, lineWidth: strokeWidth, points } = stroke;
+        if (!points || points.length < 2) return;
+        visible.beginPath();
+      
+        visible.globalCompositeOperation = type === 'eraser' ? 'destination-out' : 'source-over';
+        visible.strokeStyle = type === 'eraser' ? 'rgba(0,0,0,1)' : strokeColor;
+        visible.lineWidth = strokeWidth;
+      
+        visible.moveTo(points[0].xRel * canvas.width, points[0].yRel * canvas.height);
+        points.forEach(({ xRel, yRel }) => {
+          visible.lineTo(xRel * canvas.width, yRel * canvas.height);
+        });
+      
+        visible.stroke();
+      });
     };
-  
-
-
-
     
-
-
-
-
 
     useEffect(() => {
       const canvas = canvasRef.current;
-      const parent = canvas.parentElement;
-  
-      const resize = () => {
-          canvas.width = parent.clientWidth;
-          canvas.height = parent.clientHeight;
-          const context = canvas.getContext('2d');
-          context.lineCap = 'round';
-          context.lineJoin = 'round';
-          VcontextRef.current = context;
-          showCanvas();
-      }
-      resize();
-  
-      window.addEventListener('resize', resize);
-      return () => window.removeEventListener('resize', resize);
+    
+      // Set canvas width and height to fixed size (not dynamically)
+      const fixedWidth = 800;  // Change this to the desired width
+      const fixedHeight = 600; // Change this to the desired height
+      canvas.width = fixedWidth;
+      canvas.height = fixedHeight;
+    
+      const context = canvas.getContext('2d');
+      context.lineCap = 'round';
+      context.lineJoin = 'round';
+      VcontextRef.current = context;
+    
+      showCanvas();
     }, []);
+    
   
     const startDrawing = e => {
       const canvas = canvasRef.current;
+      const ctx = VcontextRef.current;
       const { offsetX, offsetY } = e.nativeEvent;
-      const xRel = offsetX/canvas.width;
-      const yRel = offsetY/canvas.height;
-      strokesRef.current.push({color, lineWidth, points: [{xRel,yRel}]});
+      const xRel = offsetX / canvas.width;
+      const yRel = offsetY / canvas.height;
+    
+      if (isErasing) {
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.strokeStyle = 'rgba(0,0,0,1)';
+        ctx.lineWidth = 20;
+      
+        strokesRef.current.push({
+          type: 'eraser',
+          color: 'rgba(0,0,0,1)',
+          lineWidth: 20,
+          points: [{ xRel, yRel }]
+        });
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+        strokesRef.current.push({
+          type: 'pen',
+          color,
+          lineWidth,
+          points: [{ xRel, yRel }]
+        });
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+      }      
+    
+      ctx.beginPath();
+      ctx.moveTo(offsetX, offsetY);
       isDrawingRef.current = true;
     };
   
     const draw = e => {
       if (!isDrawingRef.current) return;
       const canvas = canvasRef.current;
+      const ctx = VcontextRef.current;
       const { offsetX, offsetY } = e.nativeEvent;
-      const xRel = offsetX/canvas.width;
-      const yRel = offsetY/canvas.height;
-      const currStroke = strokesRef.current[strokesRef.current.length-1];
-      currStroke.points.push({xRel,yRel});
-      showCanvas();
+      const xRel = offsetX / canvas.width;
+      const yRel = offsetY / canvas.height;
+    
+      const currStroke = strokesRef.current[strokesRef.current.length - 1];
+    
+      if (isErasing) {
+        ctx.lineTo(offsetX, offsetY);
+        ctx.stroke();
+        if (currStroke && currStroke.type === 'eraser') {
+          currStroke.points.push({ xRel, yRel });
+        }
+      } else {
+        ctx.lineTo(offsetX, offsetY);
+        ctx.stroke();
+        if (currStroke) {
+          currStroke.points.push({ xRel, yRel });
+        }
+      }
     };
+    
   
     const stopDrawing = () => {
       isDrawingRef.current = false;
@@ -123,6 +174,10 @@ const HostRoom = ({ user }) => {
           />
           <span>{lineWidth}</span>
         </label>
+          <button onClick={() => setIsErasing(!isErasing)}>
+            {isErasing ? 'Switch to Pen' : 'Eraser'}
+          </button>
+
       </div>
 
       <div className = "canvas">
