@@ -26,42 +26,54 @@ const Whiteboard = ({ user }) => {
     if (timeLeft === null || timeLeft <= 0) return;
 
     const timer = setTimeout(() => {
-      setTimeLeft((prev) => prev - 1);
+      setTimeLeft((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          submitDrawing();
+        }
+        return next;
+      });
     }, 1000);
 
     return () => clearTimeout(timer);
   }, [timeLeft]);
 
+  const submitDrawing = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) {
+      console.error("Canvas not ready.");
+      return;
+    }
+
+    console.log("SUBMITTING.");
+
+    const imageData = canvas.toDataURL('image/png');
+
+    fetch(`${API_BASE}/submit-drawing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        playerId: user.id,
+        gameCode: gameCode,
+        imageData: imageData
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Drawing submitted:", data);
+        navigate(`/${username}/${gameCode}/buffer`);
+      })
+      .catch(err => {
+        console.error("Error submitting drawing:", err);
+        navigate(`/${username}/${gameCode}/buffer`);
+      });
+  };
+
   useEffect(() => {
     const handleGameState = (data) => {
       if (data.state === 'submission') {
-        const canvas = canvasRef.current;
-        if (!canvas) {
-          console.error("Canvas not ready.");
-          return;
-        }
-
-        const imageData = canvas.toDataURL('image/png');
-
-        fetch(`${API_BASE}/submit-drawing`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          body: JSON.stringify({
-            playerId: user.id,
-            gameCode: gameCode,
-            imageData: imageData
-          })
-        })
-          .then(res => res.json())
-          .then(data => {
-            console.log("Drawing submitted:", data);
-            navigate(`/${username}/${gameCode}/buffer`);
-          })
-          .catch(err => {
-            console.error("Error submitting drawing:", err);
-            navigate(`/${username}/${gameCode}/buffer`);
-          });
+        submitDrawing();
       }
     };
 

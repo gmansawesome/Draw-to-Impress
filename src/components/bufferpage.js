@@ -17,7 +17,7 @@ const BufferPage = () => {
   }, []);
 
   useEffect(() => {
-    socket.once('game_state', (data) => {
+    socket.on('game_state', (data) => {
       if (data.state === 'voting') {
         navigate(`/${username}/${gameCode}/vote`);
       }
