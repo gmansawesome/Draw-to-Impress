@@ -36,6 +36,15 @@ const HostRoom = ({ user }) => {
       });
     };
   
+
+
+
+    
+
+
+
+
+
     useEffect(() => {
       const canvas = canvasRef.current;
       const parent = canvas.parentElement;
