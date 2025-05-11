@@ -99,6 +99,9 @@ const HostRoom = ({ user }) => {
 
   return (
     <div className = "whiteboardFull">
+      <audio autoPlay loop>
+        <source src="/Music/Piano Music.mp3" type="audio/mpeg" />
+      </audio>
       <h2>Whiteboard</h2>
       <div className = "controls">
         <label>

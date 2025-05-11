@@ -9,7 +9,9 @@ import PrivateRoute from './components/privateroute';
 import HostRoom from './components/HostRoom.js';
 import PlayerRoom from './components/PlayerRoom';
 
+
 function AppContent() {
+  
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
@@ -44,7 +46,9 @@ function AppContent() {
   };
 
   return (
+    
     <div className="App">
+
     {user && (
         <header className="app-header">
           <span>Welcome, {user?.username}</span>
@@ -74,6 +78,9 @@ function AppContent() {
 function App() {
   return (
     <Router>
+      <audio autoPlay loop>
+        <source src="/Music/Piano Music.mp3" type="audio/mpeg" />
+      </audio>
       <AppContent />
     </Router>
   );
