@@ -17,10 +17,11 @@ const PlayerRoom = ({ user }) => {
       setPlayers(updatedPlayers);
     });
 
-    // Optional: Listen for game state if you want to start the game live
     socket.on('game_state', (data) => {
       if (data.state === 'whiteboard') {
-        navigate(`/${username}/player/${gameCode}/whiteboard`);
+        navigate(`/${username}/${gameCode}/whiteboard`, {
+          state: { prompt: data.prompt, duration: data.duration }
+        });
       }
     });
 

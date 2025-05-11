@@ -9,6 +9,9 @@ import PrivateRoute from './components/privateroute';
 import PlayerRoom from './components/playerroom';
 import HostRoom from './components/hostroom';
 import socket from './components/socket';
+import Whiteboard from './components/whiteboard';
+import BufferPage from './components/bufferpage';
+import VotePage from './components/votepage';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -29,11 +32,19 @@ function AppContent() {
       if (data.inGame) {
         socket.emit("rejoin_game", { userId: userData.id, code: data.gameCode });
 
-        socket.once("game_state", (state) => {
-          const path = state.role === 'host'
-            ? `/${userData.username}/host/${state.gameCode}`
-            : `/${userData.username}/player/${state.gameCode}`;
-          navigate(path);
+        socket.once("game_state", (data) => {
+          if (data.state === 'submission') {
+            navigate(`/${userData.username}/${data.gameCode}/buffer`);
+          }
+          else if (data.state === 'voting') {
+            navigate(`/${userData.username}/${data.gameCode}/vote`);
+          }
+          else {
+            const path = data.role === 'host'
+              ? `/${userData.username}/host/${data.gameCode}`
+              : `/${userData.username}/player/${data.gameCode}`;
+            navigate(path);
+          }
         });
       } 
       else {
@@ -60,7 +71,6 @@ function AppContent() {
           </button>
         </header>
     )}
-
       <Routes>
         <Route path="/logout" element={<Logout setUser={setUser} />} />
         <Route path="/" element={<Login onLogin={handleLogin} />} />
@@ -68,6 +78,9 @@ function AppContent() {
         <Route path="/lobby" element={<PrivateRoute user={user}> <Lobby user={user} /> </PrivateRoute>}/>        
         <Route path="/:username/host/:gameCode" element={<PrivateRoute user={user}> <HostRoom user={user} /> </PrivateRoute>} />
         <Route path="/:username/player/:gameCode" element={<PrivateRoute user={user}> <PlayerRoom user={user} /> </PrivateRoute>} />
+        <Route path="/:username/:gameCode/whiteboard" element={<PrivateRoute user={user}> <Whiteboard user={user} /> </PrivateRoute>} />
+        <Route path="/:username/:gameCode/buffer" element={<PrivateRoute user={user}> <BufferPage user={user} /> </PrivateRoute>} />
+        <Route path="/:username/:gameCode/vote" element={<PrivateRoute user={user}> <VotePage user={user} /> </PrivateRoute>} />
       </Routes>
 
     </div>
