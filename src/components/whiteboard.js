@@ -33,35 +33,42 @@ const Whiteboard = ({ user }) => {
   }, [timeLeft]);
 
   useEffect(() => {
-    socket.on('game_state', (data) => {
-        if (data.state === 'submission') {
-            const canvas = canvasRef.current;
-            const imageData = canvas.toDataURL('image/png');
-
-            fetch(`${API_BASE}/submit-drawing`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                    playerId: user.id,
-                    gameCode: gameCode,
-                    imageData: imageData
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                console.log("Drawing submitted:", data);
-                navigate(`/${username}/${gameCode}/buffer`);
-            })
-            .catch(err => {
-                console.error("Error submitting drawing:", err);
-                navigate(`/${username}/${gameCode}/buffer`);
-            });
+    const handleGameState = (data) => {
+      if (data.state === 'submission') {
+        const canvas = canvasRef.current;
+        if (!canvas) {
+          console.error("Canvas not ready.");
+          return;
         }
-    });
+
+        const imageData = canvas.toDataURL('image/png');
+
+        fetch(`${API_BASE}/submit-drawing`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            playerId: user.id,
+            gameCode: gameCode,
+            imageData: imageData
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            console.log("Drawing submitted:", data);
+            navigate(`/${username}/${gameCode}/buffer`);
+          })
+          .catch(err => {
+            console.error("Error submitting drawing:", err);
+            navigate(`/${username}/${gameCode}/buffer`);
+          });
+      }
+    };
+
+    socket.once('game_state', handleGameState);
 
     return () => {
-      socket.off('game_state');
+      socket.off('game_state', handleGameState);
     };
   }, [gameCode, username, user.id, navigate]);
 
