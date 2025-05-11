@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE from './apiConfig';
 
 const Lobby = ({ user }) => {
   const [gameCode, setGameCode] = useState('');
@@ -7,7 +8,7 @@ const Lobby = ({ user }) => {
 
   const handleHostGame = async () => {
     try {
-      const response = await fetch('http://localhost:5000/create-game', {
+      const response = await fetch(`${API_BASE}/create-game`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ hostId: user.id })
@@ -31,7 +32,7 @@ const Lobby = ({ user }) => {
     }
     console.log(`Attempting to join ${gameCode}`);
     try {
-      const response = await fetch('http://localhost:5000/join-game', {
+      const response = await fetch(`${API_BASE}/join-game`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

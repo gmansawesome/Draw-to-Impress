@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
+import API_BASE from './apiConfig';
 
 const VotePage = () => {
   const { username, gameCode } = useParams();

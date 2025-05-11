@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate  } from 'react-router-dom';
 import socket from './socket';
+import API_BASE from './apiConfig';
 import './whiteboard.css';
 
 const Whiteboard = ({ user }) => {
@@ -32,12 +33,12 @@ const Whiteboard = ({ user }) => {
   }, [timeLeft]);
 
   useEffect(() => {
-    socket.once('game_state', (data) => {
+    socket.on('game_state', (data) => {
         if (data.state === 'submission') {
             const canvas = canvasRef.current;
             const imageData = canvas.toDataURL('image/png');
 
-            fetch('http://localhost:5000/submit-drawing', {
+            fetch(`${API_BASE}/submit-drawing`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import socket from './socket';
+import API_BASE from './apiConfig';
 
 const PlayerRoom = ({ user }) => {
   const { username, gameCode } = useParams();
@@ -32,12 +33,13 @@ const PlayerRoom = ({ user }) => {
     return () => {
       socket.off('player_list');
       socket.off('game_state');
+      socket.off('game_closed');
     };
   }, [user.id, gameCode, username, navigate]);
 
   const handleLeaveGame = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/game/${username}/${gameCode}`, {
+      const response = await fetch(`${API_BASE}/game/${username}/${gameCode}`, {
         method: 'DELETE',
         credentials: 'include',
       });

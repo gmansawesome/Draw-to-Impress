@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE from './apiConfig';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -22,7 +23,7 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch('http://localhost:5000/signup', {
+    const response = await fetch(`${API_BASE}/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'

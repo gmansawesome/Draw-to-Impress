@@ -1,6 +1,7 @@
 import { io } from "socket.io-client";
+import API_BASE from "./apiConfig";
 
-const socket = io("http://127.0.0.1:5000", {
+const socket = io(API_BASE, {
   withCredentials: true,
 });
 

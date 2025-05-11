@@ -12,6 +12,7 @@ import socket from './components/socket';
 import Whiteboard from './components/whiteboard';
 import BufferPage from './components/bufferpage';
 import VotePage from './components/votepage';
+import API_BASE from './components/apiConfig';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -20,7 +21,7 @@ function AppContent() {
   const handleLogin = async (userData) => {
     setUser(userData);
     try {
-      const response = await fetch('http://localhost:5000/check-active-game', {
+      const response = await fetch(`${API_BASE}/check-active-game`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: userData.id }),

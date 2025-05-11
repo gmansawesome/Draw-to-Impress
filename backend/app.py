@@ -485,7 +485,6 @@ def game_monitor():
                         "gameCode": game.code,
                         "state": "submission"
                     }, room=game.code)
-
                     socketio.start_background_task(voting_transition, game.code)
         eventlet.sleep(5)
 
