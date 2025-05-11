@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
+
 import '../App.css';
 
 const HostRoom = ({ user }) => {
@@ -72,9 +73,8 @@ const HostRoom = ({ user }) => {
     useEffect(() => {
       const canvas = canvasRef.current;
     
-      // Set canvas width and height to fixed size (not dynamically)
-      const fixedWidth = 800;  // Change this to the desired width
-      const fixedHeight = 600; // Change this to the desired height
+      const fixedWidth = 800;
+      const fixedHeight = 600;
       canvas.width = fixedWidth;
       canvas.height = fixedHeight;
       let history = [];
@@ -97,12 +97,12 @@ const HostRoom = ({ user }) => {
       if (isErasing) {
         ctx.globalCompositeOperation = 'destination-out';
         ctx.strokeStyle = 'rgba(0,0,0,1)';
-        ctx.lineWidth = 20;
+        ctx.lineWidth = lineWidth;
       
         strokesRef.current.push({
           type: 'eraser',
           color: 'rgba(0,0,0,1)',
-          lineWidth: 20,
+          lineWidth,
           points: [{ xRel, yRel }]
         });
       } else {
@@ -113,8 +113,8 @@ const HostRoom = ({ user }) => {
           lineWidth,
           points: [{ xRel, yRel }]
         });
-        ctx.strokeStyle = color;
         ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = color;
       }      
     
       ctx.beginPath();
@@ -191,10 +191,18 @@ const HostRoom = ({ user }) => {
           />
           <span>{lineWidth}</span>
         </label>
-          <button onClick={() => setIsErasing(!isErasing)}>
-            {isErasing ? 'Switch to Pen' : 'Eraser'}
+          <button onClick={() => setIsErasing(false)}className="undo">
+            <img src="/images/pen.png" width="30" height="30" />
           </button>
-          <button onClick={handleUndo}>Undo</button>
+          <button onClick={() => setIsErasing(true)}
+            className={`undo${isErasing ? 'active' : ''}`}
+          
+          >
+            <img src="/images/eraser.png" width="30" height="30" align-items= "center"/>
+          </button>
+          <button onClick={handleUndo} className="undo">
+            <img src="/images/undo.png" width="30" height="30" />
+          </button>
           </div>
 
       <div className = "canvas">
