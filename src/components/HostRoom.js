@@ -54,6 +54,19 @@ const HostRoom = ({ user }) => {
         visible.stroke();
       });
     };
+
+    const handleUndo = () => {
+      if (strokesRef.current.length === 0) return;
+    
+      strokesRef.current.pop();
+    
+      const canvas = canvasRef.current;
+      const ctx = VcontextRef.current;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+      showCanvas();
+    };
+    
     
 
     useEffect(() => {
@@ -64,7 +77,7 @@ const HostRoom = ({ user }) => {
       const fixedHeight = 600; // Change this to the desired height
       canvas.width = fixedWidth;
       canvas.height = fixedHeight;
-    
+      let history = [];
       const context = canvas.getContext('2d');
       context.lineCap = 'round';
       context.lineJoin = 'round';
@@ -108,6 +121,8 @@ const HostRoom = ({ user }) => {
       ctx.moveTo(offsetX, offsetY);
       isDrawingRef.current = true;
     };
+
+    
   
     const draw = e => {
       if (!isDrawingRef.current) return;
@@ -148,6 +163,8 @@ const HostRoom = ({ user }) => {
       link.click();
     };
 
+    
+
   return (
     <div className = "whiteboardFull">
       <audio autoPlay loop>
@@ -177,8 +194,8 @@ const HostRoom = ({ user }) => {
           <button onClick={() => setIsErasing(!isErasing)}>
             {isErasing ? 'Switch to Pen' : 'Eraser'}
           </button>
-
-      </div>
+          <button onClick={handleUndo}>Undo</button>
+          </div>
 
       <div className = "canvas">
         <canvas
