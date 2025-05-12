@@ -10,7 +10,7 @@ const VotePage = ({ user }) => {
   const [currentDrawing, setCurrentDrawing] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedVote, setSelectedVote] = useState(null);
-  const [timeLeft, setTimeLeft] = useState(8);
+  const [timeLeft, setTimeLeft] = useState(5);
   const location = useLocation();
   const prompt = location.state?.prompt;
 
@@ -38,7 +38,7 @@ const VotePage = ({ user }) => {
   useEffect(() => {
     if (!currentDrawing) return;
 
-    setTimeLeft(8);
+    setTimeLeft(5);
     const interval = setInterval(() => {
       setTimeLeft(prev => {
         if (prev <= 1) {

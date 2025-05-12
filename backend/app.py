@@ -13,7 +13,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone
 import os
 
-drawtime = 60
+drawtime = 45
 
 class UserView(ModelView):
     column_hide_backrefs = False
@@ -568,6 +568,8 @@ def game_monitor():
             for game in games:
                 if (get_time_left(game)) <= 0:
                     socketio.start_background_task(voting_transition, game.code)
+                    game.state = "submission"
+                    db.session.commit()
                     for x in range(10):
                         eventlet.sleep(.5)
                         print(f"Emitting game_submit for {game.code}")
@@ -584,11 +586,11 @@ def voting_transition(game_code):
         game = Game.query.filter_by(code=game_code).first()
         if game and game.state == "submission":
             socketio.start_background_task(voting_process, game.code)
+            game.state = "voting"
+            db.session.commit()
             for x in range(10):
                 eventlet.sleep(.5)
                 print(f"Emitting game_vote for {game.code}")
-                game.state = "voting"
-                db.session.commit()
                 socketio.emit("game_vote", {
                     "gameCode": game.code,
                     "state": "voting",
