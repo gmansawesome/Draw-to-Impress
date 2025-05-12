@@ -14,6 +14,10 @@ from datetime import datetime, timezone
 
 drawtime = 20
 
+app = None
+db = SQLAlchemy(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 class UserView(ModelView):
     column_hide_backrefs = False
     column_list = ["id", "username", "name", "hosted_games", "games", "drawing", "votes"]
@@ -33,9 +37,80 @@ class VoteView(ModelView):
     column_hide_backrefs = False
     column_list = ["id", "voter", "drawing", "game", "score"]
 
-app = None
-db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(60), unique=True)
+    name = db.Column(db.String(120))
+    password = db.Column(db.String(256))
+
+    hosted_games = db.relationship("Game", foreign_keys=lambda: [Game.host_id], backref="host", cascade="all, delete")
+    games = db.relationship("GameSession", foreign_keys=lambda: [GameSession.player_id], backref="player", cascade="all, delete")
+    drawing = db.relationship("Drawing", foreign_keys=lambda: [Drawing.player_id], backref="player", cascade="all, delete")
+    votes = db.relationship("Vote", foreign_keys=lambda: [Vote.voter_id], backref="voter", cascade="all, delete")
+
+    def set_password(self, raw_password):
+        self.password = generate_password_hash(raw_password)
+
+    def check_password(self, raw_password):
+        return check_password_hash(self.password, raw_password)
+
+    def __str__(self):
+        return str(self.name)
+
+class Game(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    state = db.Column(db.String(120)) # "lobby, whiteboard, voting, results"
+    code = db.Column(db.String(120))
+    capacity = db.Column(db.Integer)
+    host_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    prompt_id = db.Column(db.Integer, db.ForeignKey("prompt.id"))
+    start_time = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    players = db.relationship("GameSession", foreign_keys=lambda: [GameSession.game_id], backref="game", cascade="all, delete")
+    drawings = db.relationship("Drawing", foreign_keys=lambda: [Drawing.game_id], backref="game", cascade="all, delete")
+    votes = db.relationship("Vote", foreign_keys=lambda: [Vote.game_id], backref="game", cascade="all, delete")
+
+    def __str__(self):
+        return f"Game {self.id}"
+
+class GameSession(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
+
+    def __str__(self):
+        return f"GS-{self.id}"
+    
+class Prompt(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.String(240))
+
+    active_games = db.relationship("Game", foreign_keys=lambda: [Game.prompt_id], backref="prompt", cascade="all, delete")
+
+    def __str__(self):
+        return str(self.id)
+    
+class Drawing(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    player_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
+    image_data = db.Column(db.Text, nullable=False)
+
+    votes = db.relationship("Vote", foreign_keys=lambda: [Vote.drawing_id], backref="drawing", cascade="all, delete")
+
+    def __str__(self):
+        return f"P-{self.player_id}"
+    
+class Vote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    voter_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    drawing_id = db.Column(db.Integer, db.ForeignKey("drawing.id"))
+    game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
+    score = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<Vote by User {self.voter_id} for Drawing {self.drawing_id}>"
+
 
 def create_app():
     app = Flask(__name__)
@@ -47,10 +122,6 @@ def create_app():
     db.init_app(app)
     socketio.init_app(app, cors_allowed_origins="*")
 
-    with app.app_context():
-        db.create_all()
-        socketio.start_background_task(game_monitor)
-
     # Register views here
     admin = Admin(app)
     admin.add_view(UserView(User, db.session))
@@ -59,80 +130,6 @@ def create_app():
     admin.add_view(PromptView(Prompt, db.session))
     admin.add_view(DrawingView(Drawing, db.session))
     admin.add_view(VoteView(Vote, db.session))
-
-    class User(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        username = db.Column(db.String(60), unique=True)
-        name = db.Column(db.String(120))
-        password = db.Column(db.String(256))
-
-        hosted_games = db.relationship("Game", foreign_keys=lambda: [Game.host_id], backref="host", cascade="all, delete")
-        games = db.relationship("GameSession", foreign_keys=lambda: [GameSession.player_id], backref="player", cascade="all, delete")
-        drawing = db.relationship("Drawing", foreign_keys=lambda: [Drawing.player_id], backref="player", cascade="all, delete")
-        votes = db.relationship("Vote", foreign_keys=lambda: [Vote.voter_id], backref="voter", cascade="all, delete")
-
-        def set_password(self, raw_password):
-            self.password = generate_password_hash(raw_password)
-
-        def check_password(self, raw_password):
-            return check_password_hash(self.password, raw_password)
-
-        def __str__(self):
-            return str(self.name)
-
-    class Game(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        state = db.Column(db.String(120)) # "lobby, whiteboard, voting, results"
-        code = db.Column(db.String(120))
-        capacity = db.Column(db.Integer)
-        host_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-        prompt_id = db.Column(db.Integer, db.ForeignKey("prompt.id"))
-        start_time = db.Column(db.DateTime(timezone=True), nullable=True)
-
-        players = db.relationship("GameSession", foreign_keys=lambda: [GameSession.game_id], backref="game", cascade="all, delete")
-        drawings = db.relationship("Drawing", foreign_keys=lambda: [Drawing.game_id], backref="game", cascade="all, delete")
-        votes = db.relationship("Vote", foreign_keys=lambda: [Vote.game_id], backref="game", cascade="all, delete")
-
-        def __str__(self):
-            return f"Game {self.id}"
-
-    class GameSession(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        player_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-        game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
-
-        def __str__(self):
-            return f"GS-{self.id}"
-        
-    class Prompt(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        content = db.Column(db.String(240))
-
-        active_games = db.relationship("Game", foreign_keys=lambda: [Game.prompt_id], backref="prompt", cascade="all, delete")
-
-        def __str__(self):
-            return str(self.id)
-        
-    class Drawing(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        player_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-        game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
-        image_data = db.Column(db.Text, nullable=False)
-
-        votes = db.relationship("Vote", foreign_keys=lambda: [Vote.drawing_id], backref="drawing", cascade="all, delete")
-
-        def __str__(self):
-            return f"P-{self.player_id}"
-        
-    class Vote(db.Model):
-        id = db.Column(db.Integer, primary_key=True)
-        voter_id = db.Column(db.Integer, db.ForeignKey("user.id"))
-        drawing_id = db.Column(db.Integer, db.ForeignKey("drawing.id"))
-        game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
-        score = db.Column(db.Integer)
-
-        def __repr__(self):
-            return f"<Vote by User {self.voter_id} for Drawing {self.drawing_id}>"
 
     # def main():
     #     with app.app_context():
@@ -564,99 +561,104 @@ def create_app():
                 for row in results
             ]
         })
-
-    def get_time_left(game):
-        if not game.start_time:
-            return drawtime
-
-        start = game.start_time
-
-        if start.tzinfo is None:
-            start = start.replace(tzinfo=timezone.utc)
-
-        elapsed = (datetime.now(timezone.utc) - start).total_seconds()
-        return max(0, int(drawtime - elapsed))
-
-    def game_monitor():
-        while True:
-            eventlet.sleep(1)
-            with app.app_context():
-                print("CYCLE")
-                games = Game.query.filter_by(state="whiteboard").all()
-                for game in games:
-                    if (get_time_left(game)) <= 0:
-                        socketio.start_background_task(voting_transition, game.code)
-                        for x in range(10):
-                            eventlet.sleep(.5)
-                            print(f"Emitting game_submit for {game.code}")
-                            game.state = "submission"
-                            db.session.commit()
-                            socketio.emit("game_submit", {
-                                "gameCode": game.code,
-                                "state": "submission"
-                            }, room=game.code)
-                        
-    def voting_transition(game_code):
-        eventlet.sleep(5)
-        with app.app_context():
-            game = Game.query.filter_by(code=game_code).first()
-            if game and game.state == "submission":
-                socketio.start_background_task(voting_process, game.code)
-                for x in range(10):
-                    eventlet.sleep(.5)
-                    print(f"Emitting game_vote for {game.code}")
-                    game.state = "voting"
-                    db.session.commit()
-                    socketio.emit("game_vote", {
-                        "gameCode": game.code,
-                        "state": "voting"
-                    }, room=game.code)
-
-    def voting_process(game_code):
-        eventlet.sleep(5)
-        with app.app_context():
-            game = Game.query.filter_by(code=game_code).first()
-            if not game:
-                return
-            drawings = Drawing.query.filter_by(game_id=game.id).all()
-            if not drawings:
-                return
-
-            submissions = []
-            for drawing in drawings:
-                submissions.append({
-                    "drawingId": drawing.id,
-                    "imageData": drawing.image_data,
-                    "playerId": drawing.player_id,
-                    "playerName": drawing.player.name
-                })
-
-        for drawing in submissions:
-            print(f"Emitting drawing {drawing['drawingId']}")
-            socketio.emit("voting_display", {
-                "drawingId": drawing["drawingId"],
-                "imageData": drawing["imageData"],
-                "playerName": drawing["playerName"]
-            }, room=game_code)
-            eventlet.sleep(20)
-
-        with app.app_context():
-            game = Game.query.filter_by(code=game_code).first()
-            game.state = "results"
-            db.session.commit()
-
-            print(f"Emitting voting end")
-            socketio.emit("voting_end", {
-                "gameCode": game_code,
-                "state": game.state
-            }, room=game_code)
-
-            eventlet.sleep(10)
-            GameSession.query.filter_by(game_id=game.id).delete()
-            Vote.query.filter_by(game_id=game.id).delete()
-            db.session.commit()
     
+    with app.app_context():
+        db.create_all()
+        socketio.start_background_task(game_monitor)
+
     return app
+
+
+def get_time_left(game):
+    if not game.start_time:
+        return drawtime
+
+    start = game.start_time
+
+    if start.tzinfo is None:
+        start = start.replace(tzinfo=timezone.utc)
+
+    elapsed = (datetime.now(timezone.utc) - start).total_seconds()
+    return max(0, int(drawtime - elapsed))
+
+def game_monitor():
+    while True:
+        eventlet.sleep(1)
+        with app.app_context():
+            print("CYCLE")
+            games = Game.query.filter_by(state="whiteboard").all()
+            for game in games:
+                if (get_time_left(game)) <= 0:
+                    socketio.start_background_task(voting_transition, game.code)
+                    for x in range(10):
+                        eventlet.sleep(.5)
+                        print(f"Emitting game_submit for {game.code}")
+                        game.state = "submission"
+                        db.session.commit()
+                        socketio.emit("game_submit", {
+                            "gameCode": game.code,
+                            "state": "submission"
+                        }, room=game.code)
+                    
+def voting_transition(game_code):
+    eventlet.sleep(5)
+    with app.app_context():
+        game = Game.query.filter_by(code=game_code).first()
+        if game and game.state == "submission":
+            socketio.start_background_task(voting_process, game.code)
+            for x in range(10):
+                eventlet.sleep(.5)
+                print(f"Emitting game_vote for {game.code}")
+                game.state = "voting"
+                db.session.commit()
+                socketio.emit("game_vote", {
+                    "gameCode": game.code,
+                    "state": "voting"
+                }, room=game.code)
+
+def voting_process(game_code):
+    eventlet.sleep(5)
+    with app.app_context():
+        game = Game.query.filter_by(code=game_code).first()
+        if not game:
+            return
+        drawings = Drawing.query.filter_by(game_id=game.id).all()
+        if not drawings:
+            return
+
+        submissions = []
+        for drawing in drawings:
+            submissions.append({
+                "drawingId": drawing.id,
+                "imageData": drawing.image_data,
+                "playerId": drawing.player_id,
+                "playerName": drawing.player.name
+            })
+
+    for drawing in submissions:
+        print(f"Emitting drawing {drawing['drawingId']}")
+        socketio.emit("voting_display", {
+            "drawingId": drawing["drawingId"],
+            "imageData": drawing["imageData"],
+            "playerName": drawing["playerName"]
+        }, room=game_code)
+        eventlet.sleep(20)
+
+    with app.app_context():
+        game = Game.query.filter_by(code=game_code).first()
+        game.state = "results"
+        db.session.commit()
+
+        print(f"Emitting voting end")
+        socketio.emit("voting_end", {
+            "gameCode": game_code,
+            "state": game.state
+        }, room=game_code)
+
+        eventlet.sleep(10)
+        GameSession.query.filter_by(game_id=game.id).delete()
+        Vote.query.filter_by(game_id=game.id).delete()
+        db.session.commit()
 
 app = create_app()
 
