@@ -33,7 +33,8 @@ const Whiteboard = ({ user }) => {
   }, [timeLeft]);
 
   useEffect(() => {
-    socket.on('game_state', (data) => {
+    socket.on('game_submit', (data) => {
+        console.log("GAME_SUBMIT RECEVIED")
         if (data.state === 'submission') {
             const canvas = canvasRef.current;
             const imageData = canvas.toDataURL('image/png');
@@ -61,7 +62,7 @@ const Whiteboard = ({ user }) => {
     });
 
     return () => {
-      socket.off('game_state');
+      socket.off('game_submit');
     };
   }, [gameCode, username, user.id, navigate]);
 

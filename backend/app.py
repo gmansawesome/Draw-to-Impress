@@ -16,7 +16,7 @@ drawtime = 10
 
 class UserView(ModelView):
     column_hide_backrefs = False
-    column_list = ["id", "username", "name", "password", "hosted_games", "games", "drawing"]
+    column_list = ["id", "username", "name", "hosted_games", "games", "drawing"]
 class GameView(ModelView):
     column_hide_backrefs = False
     column_list = ["id", "state", "code", "capacity", "host", "prompt", "start_time", "players", "drawings"]
@@ -450,8 +450,12 @@ def submit_drawing():
     game = Game.query.filter_by(code=game_code).first()
     if not game:
         return jsonify({"success": False, "message": "Invalid game code"}), 404
+    
+    game_session = GameSession.query.filter_by(player_id=user.id, game_id=game.id).first()
+    if not game_session:
+        return jsonify({"success": False, "message": "User not in game"}), 404
 
-    draw = Drawing.query.filter_by(player_id=player_id, game_id=game.id).first()
+    draw = Drawing.query.filter_by(player_id=user.id, game_id=game.id).first()
     if draw:
         return jsonify({"success": False, "message": "Already submitted drawing"}), 404
 
@@ -476,17 +480,19 @@ def get_time_left(game):
 def game_monitor():
     while True:
         with app.app_context():
+            # print("CYCLE")
             games = Game.query.filter_by(state="whiteboard").all()
             for game in games:
                 if not get_time_left(game):
+                    print(f"Emitting game_submit for {game.code}")
                     game.state = "submission"
                     db.session.commit()
-                    socketio.emit("game_state", {
+                    socketio.emit("game_submit", {
                         "gameCode": game.code,
                         "state": "submission"
                     }, room=game.code)
                     socketio.start_background_task(voting_transition, game.code)
-        eventlet.sleep(5)
+        eventlet.sleep(1)
 
 def voting_transition(game_code):
     eventlet.sleep(10)
@@ -496,15 +502,15 @@ def voting_transition(game_code):
             game.state = "voting"
             db.session.commit()
 
-            socketio.emit("game_state", {
+            socketio.emit("game_vote", {
                 "gameCode": game.code,
                 "state": "voting"
             }, room=game.code)
 
-def voting_process(game_code):
-    while True:
-        with app.app_context():
-            eventlet.sleep(5)
+# def voting_process(game_code):
+#     while True:
+#         with app.app_context():
+#             eventlet.sleep(5)
 
 
 admin = Admin(app)

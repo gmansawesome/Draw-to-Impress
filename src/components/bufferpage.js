@@ -17,14 +17,15 @@ const BufferPage = () => {
   }, []);
 
   useEffect(() => {
-    socket.once('game_state', (data) => {
+    socket.once('game_vote', (data) => {
+      console.log("GAME_VOTE RECEVIED")
       if (data.state === 'voting') {
         navigate(`/${username}/${gameCode}/vote`);
       }
     });
 
     return () => {
-      socket.off('game_state');
+      socket.off('game_vote');
     };
   }, [gameCode, username, navigate]);
 
