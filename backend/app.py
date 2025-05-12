@@ -646,6 +646,9 @@ admin.add_view(PromptView(Prompt, db.session))
 admin.add_view(DrawingView(Drawing, db.session))
 admin.add_view(VoteView(Vote, db.session))
 
+print("Top-level code executing...")
+socketio.start_background_task(game_monitor)
+
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
