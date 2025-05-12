@@ -256,16 +256,16 @@ const Whiteboard = ({ user }) => {
           <button onClick={() => setIsErasing(false)}
             className={`undo ${isErasing ? '' : 'active'}`}
           >
-            <img src="/images/pen.png" width="30" height="30" />
+            <img src="/Images/pen.png" width="30" height="30" />
           </button>
           <button onClick={() => setIsErasing(true)}
             className={`undo ${isErasing ? 'active' : ''}`}
           
           >
-            <img src="/images/eraser.png" width="30" height="30"/>
+            <img src="/Images/eraser.png" width="30" height="30"/>
           </button>
           <button onClick={handleUndo} className="undo">
-            <img src="/images/undo.png" width="30" height="30" />
+            <img src="/Images/undo.png" width="30" height="30" />
           </button>
           </div>
 
