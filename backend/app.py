@@ -36,7 +36,7 @@ class VoteView(ModelView):
 
 app = Flask(__name__)
 app.secret_key = "secret"
-CORS(app, resources={r"/*": {"origins": "draw-to-impress-git-final-gmansawesomes-projects.vercel.app"}}, supports_credentials=True)
+CORS(app, resources={r"/*": {"origins": "https://draw-to-impress-git-final-gmansawesomes-projects.vercel.app"}}, supports_credentials=True)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
