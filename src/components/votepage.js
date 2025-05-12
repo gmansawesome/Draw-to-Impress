@@ -11,6 +11,7 @@ const VotePage = ({ user }) => {
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedVote, setSelectedVote] = useState(null);
   const [timeLeft, setTimeLeft] = useState(15);
+  const prompt = location.state?.prompt;
 
   useEffect(() => {
     socket.on('voting_display', (data) => {
@@ -21,7 +22,9 @@ const VotePage = ({ user }) => {
 
     socket.on('voting_end', (data) => {
       if (data.gameCode === gameCode) {
-        navigate(`/${gameCode}/results`);
+        navigate(`/${gameCode}/results`, {
+          state: { prompt: data.prompt }
+        });
       }
     });
 
@@ -83,11 +86,17 @@ const VotePage = ({ user }) => {
 
       <img src="/images/Voting.png" width="1024px" height="196px"/>
       <p>Game Code: <strong>{gameCode}</strong></p>
+      <p><strong>Prompt:</strong>{prompt}</p>
 
       {currentDrawing ? (
         <div className='vertical'>
           <h3>By: {currentDrawing.playerName}</h3>
           <p>Time left to vote: <strong>{timeLeft}s</strong></p>
+          <img
+            src={currentDrawing.imageData}
+            alt="Drawing"
+            style={styles.image}
+            />
           <p>Rate this drawing (0–5):</p>
           <div style={styles.buttonRow}>
             {[1, 2, 3, 4, 5].map(score => (
@@ -107,12 +116,6 @@ const VotePage = ({ user }) => {
               </button>
             ))}
           </div>
-          {hasVoted && <p>You voted: {selectedVote}</p>}
-          <img
-            src={currentDrawing.imageData}
-            alt="Drawing"
-            style={styles.image}
-            />
         </div>
       ) : (
         <p>Waiting for the next drawing...</p>

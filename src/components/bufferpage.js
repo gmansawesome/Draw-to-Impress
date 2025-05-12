@@ -20,12 +20,16 @@ const BufferPage = () => {
     socket.once('game_vote', (data) => {
       console.log("GAME_VOTE RECEVIED")
       if (data.state === 'voting') {
-        navigate(`/${username}/${gameCode}/vote`);
+        navigate(`/${username}/${gameCode}/vote`, {
+          state: { prompt: data.prompt }
+        });
       }
     });
 
     socket.once('voting_display', (data) => {
-      navigate(`/${username}/${gameCode}/vote`);
+      navigate(`/${username}/${gameCode}/vote`, {
+          state: { prompt: data.prompt }
+      });
     });
 
     return () => {
@@ -35,7 +39,7 @@ const BufferPage = () => {
   }, [gameCode, username, navigate]);
 
   return (
-    <div className='form-pink-background'>
+    <div className="buffer-container">
       <h2>Collecting drawings{dots}</h2>
     </div>
   );

@@ -591,7 +591,8 @@ def voting_transition(game_code):
                 db.session.commit()
                 socketio.emit("game_vote", {
                     "gameCode": game.code,
-                    "state": "voting"
+                    "state": "voting",
+                    "prompt": game.prompt.content
                 }, room=game.code)
 
 def voting_process(game_code):
@@ -618,7 +619,8 @@ def voting_process(game_code):
         socketio.emit("voting_display", {
             "drawingId": drawing["drawingId"],
             "imageData": drawing["imageData"],
-            "playerName": drawing["playerName"]
+            "playerName": drawing["playerName"],
+            "prompt": game.prompt.content
         }, room=game_code)
         eventlet.sleep(15)
 
@@ -630,7 +632,8 @@ def voting_process(game_code):
         print(f"Emittting voting end")
         socketio.emit("voting_end", {
             "gameCode": game_code,
-            "state": game.state
+            "state": game.state,
+            "prompt": game.prompt.content
         }, room=game_code)
 
         eventlet.sleep(10)

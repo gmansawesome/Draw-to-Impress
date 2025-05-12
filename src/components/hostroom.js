@@ -68,7 +68,7 @@ const HostRoom = ({ user }) => {
     <div className="lobby-container">
     <div className="join-section">
       <h2>Game Lobby</h2>
-      <p>Game Code: {gameCode}</p>
+      <p>Game Code: <strong>{gameCode}</strong></p>
       <p>Host: {username}</p>
       <h3>Players:</h3>
       <ul className="player-list">

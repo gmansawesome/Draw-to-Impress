@@ -6,6 +6,7 @@ const ResultPage = () => {
   const { username, gameCode } = useParams();
   const navigate = useNavigate();
   const [results, setResults] = useState([]);
+  const prompt = location.state?.prompt;
 
   useEffect(() => {
     fetch(`${API_BASE}/game-results/${gameCode}`, {
@@ -29,7 +30,8 @@ const ResultPage = () => {
         Back to Lobby
       </button>
       <p style={styles.text}>
-        Game Code: <strong>{gameCode}</strong>
+        Game Code: <strong>{gameCode}</strong>,
+        Prompt: {prompt}
       </p>
 
       {results.map((result, index) => (
