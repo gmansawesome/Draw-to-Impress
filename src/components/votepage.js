@@ -85,7 +85,7 @@ const VotePage = ({ user }) => {
     <div className='form-pink2-background'>
       <div className='vertical'>
 
-      <img src="/images/Voting.png" width="1024px" height="196px"/>
+      <img src="/Images/Voting.png" width="1024px" height="196px"/>
       <p>Game Code: <strong>{gameCode}</strong></p>
       <p>Prompt: {prompt}</p>
 
