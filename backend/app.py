@@ -12,7 +12,7 @@ import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone
 
-drawtime = 20
+drawtime = 120
 
 class UserView(ModelView):
     column_hide_backrefs = False
