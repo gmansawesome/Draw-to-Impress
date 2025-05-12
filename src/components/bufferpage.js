@@ -37,7 +37,7 @@ const BufferPage = () => {
   }, [gameCode, username, navigate]);
 
   return (
-    <div className="buffer-container">
+    <div className="form-pink-background">
       <h2>Collecting drawings{dots}</h2>
     </div>
   );
