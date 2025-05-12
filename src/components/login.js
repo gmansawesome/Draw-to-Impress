@@ -8,7 +8,6 @@ const Login = ({ onLogin }) => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,7 +47,7 @@ const Login = ({ onLogin }) => {
     
     <div className='form-pink-background'>
         <div className="vertical">
-          <img src="/images/Title.png" width="1024px" height="196px"/>
+          <img src="/Images/Title.png" width="1024px" height="196px"/>
 
       <div className="login-container">
         <h2>Login</h2>

@@ -56,7 +56,7 @@ const Lobby = ({ user }) => {
   return (
     <div className="lobby-container">
         <div className="vertical">
-        <img src="/images/Title.png" width="1024px" height="196px"/>
+        <img src="/Images/Title.png" width="1024px" height="196px"/>
       
       <div className="join-section">
         <h3>Join a Game</h3>

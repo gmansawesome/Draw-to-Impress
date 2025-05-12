@@ -25,7 +25,7 @@ const ResultPage = () => {
     <div className="form-green-background">
           <div className="vertical">
 
-          <img src="/images/Results.png" width="1024px" height="196px"/>
+          <img src="/Images/Results.png" width="1024px" height="196px"/>
     <div style={styles.container}>
     <button style={styles.button} onClick={() => navigate('/lobby')}>
         Back to Lobby
