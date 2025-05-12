@@ -31,13 +31,15 @@ const ResultPage = () => {
         Back to Lobby
       </button>
       <p style={styles.text}>
-        Game Code: <strong>{gameCode}</strong>,
+        Game Code: <strong>{gameCode}</strong>
+      </p>
+      <p style={styles.text}>
         Prompt: {prompt}
       </p>
 
       {results.map((result, index) => (
         <div key={result.drawingId} style={styles.resultCard}>
-          <h3>{index + 1}. {result.username}</h3>
+          <h3>#{index + 1} - {result.username}</h3>
           <p>Votes: {result.totalVotes}</p>
           <img src={result.imageData} alt="Drawing" style={styles.image} />
         </div>
