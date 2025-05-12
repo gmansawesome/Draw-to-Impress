@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE from './apiConfig';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -22,7 +23,7 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch('http://127.0.0.1:5000/signup', {
+    const response = await fetch(`${API_BASE}/signup`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -46,16 +47,48 @@ function Signup() {
         {error && <p className="error">{error}</p>}
         <form onSubmit={handleSubmit} autoComplete="off">
           <label>First Name:</label>
-          <input type="text" name="FirstName" required value={formData.FirstName} onChange={handleChange} />
+          <input
+            type="text"
+            name="FirstName"
+            pattern="^[A-Za-z]{1,50}$"
+            title="First name must only contain letters"
+            required
+            value={formData.FirstName}
+            onChange={handleChange}
+          />
 
           <label>Last Name:</label>
-          <input type="text" name="LastName" required value={formData.LastName} onChange={handleChange} />
+          <input
+            type="text"
+            name="LastName"
+            pattern="^[A-Za-z]{1,50}$"
+            title="Last name must only contain letters"
+            required
+            value={formData.LastName}
+            onChange={handleChange}
+          />
 
           <label>Username:</label>
-          <input type="text" name="Username" required value={formData.Username} onChange={handleChange} />
+          <input
+            type="text"
+            name="Username"
+            pattern="^[a-zA-Z0-9_]{3,20}$"
+            title="Username must be 3-20 characters: letters, numbers, or underscores"
+            required
+            value={formData.Username}
+            onChange={handleChange}
+          />
 
           <label>Password:</label>
-          <input type="password" name="Password" required value={formData.Password} onChange={handleChange} />
+          <input
+            type="password"
+            name="Password"
+            pattern="^[a-zA-Z0-9]{1,50}$"
+            title="Password must be 1 to 50 letters or numbers"
+            required
+            value={formData.Password}
+            onChange={handleChange}
+          />
 
           <button type="submit">Sign Up</button>
         </form>

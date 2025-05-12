@@ -12,7 +12,7 @@ const Login = ({ onLogin }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+  
     try {
       const response = await fetch(`${API_BASE}/login`, { 
         method: 'POST',
@@ -58,18 +58,24 @@ const Login = ({ onLogin }) => {
             <label>Username:</label>
             <input
               type="text"
+              name="Username"
+              pattern="^[a-zA-Z0-9_]{3,20}$"
+              title="Username must be 3-20 characters: letters, numbers, or underscores"
+              required
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              required
             />
           </div>
           <div className="form-group">
             <label>Password:</label>
             <input
               type="password"
+              name="Password"
+              pattern="^[a-zA-Z0-9]{1,50}$"
+              title="Password must be 1 to 50 letters or numbers"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
             />
           </div>
           <button type="submit">Login</button>
