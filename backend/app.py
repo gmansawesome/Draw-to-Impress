@@ -115,10 +115,10 @@ class Vote(db.Model):
     def __repr__(self):
         return f"<Vote by User {self.voter_id} for Drawing {self.drawing_id}>"
 
-def main():
-    with app.app_context():
+# def main():
+#     with app.app_context():
         # db.drop_all()
-        db.create_all()
+        # db.create_all()
 
         # host = User(username="hostUser", name="Alice Host", password="123")
         # player1 = User(username="playerOne", name="Bob Player", password="123")
@@ -133,13 +133,13 @@ def main():
         # session2 = GameSession(player=player2, game=game)
         # session3 = GameSession(player=player3, game=game)
 
-        db.session.add_all([
+        # db.session.add_all([
             # prompt
             # host, player1, player2, player3,
             # prompt, game, session1, session2, session3
-        ])
+        # ])
 
-        db.session.commit()
+        # db.session.commit()
 
 
 @app.route('/login', methods=['POST'])
@@ -647,6 +647,8 @@ admin.add_view(DrawingView(Drawing, db.session))
 admin.add_view(VoteView(Vote, db.session))
 
 if __name__ == '__main__':
-    main()
+    with app.app_context():
+        db.create_all()
+
     socketio.start_background_task(game_monitor)
-    socketio.run(app, debug=True)
+    socketio.run(app, async_mode="eventlet", debug=True)
