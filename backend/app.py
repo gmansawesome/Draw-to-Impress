@@ -14,9 +14,8 @@ from datetime import datetime, timezone
 
 drawtime = 20
 
-app = None
-db = SQLAlchemy(app)
-socketio = SocketIO(app, cors_allowed_origins="*")
+db = SQLAlchemy()
+socketio = SocketIO(cors_allowed_origins="*")
 
 class UserView(ModelView):
     column_hide_backrefs = False
