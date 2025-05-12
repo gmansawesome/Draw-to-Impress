@@ -619,8 +619,7 @@ def voting_process(game_code):
         socketio.emit("voting_display", {
             "drawingId": drawing["drawingId"],
             "imageData": drawing["imageData"],
-            "playerName": drawing["playerName"],
-            "prompt": game.prompt.content
+            "playerName": drawing["playerName"]
         }, room=game_code)
         eventlet.sleep(15)
 

@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import API_BASE from './apiConfig';
 
 const ResultPage = () => {
   const { username, gameCode } = useParams();
   const navigate = useNavigate();
   const [results, setResults] = useState([]);
+  const location = useLocation();
   const prompt = location.state?.prompt;
 
   useEffect(() => {

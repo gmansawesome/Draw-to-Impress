@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import socket from './socket';
 import API_BASE from './apiConfig';
 
@@ -11,6 +11,7 @@ const VotePage = ({ user }) => {
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedVote, setSelectedVote] = useState(null);
   const [timeLeft, setTimeLeft] = useState(15);
+  const location = useLocation();
   const prompt = location.state?.prompt;
 
   useEffect(() => {
@@ -86,7 +87,7 @@ const VotePage = ({ user }) => {
 
       <img src="/images/Voting.png" width="1024px" height="196px"/>
       <p>Game Code: <strong>{gameCode}</strong></p>
-      <p><strong>Prompt:</strong>{prompt}</p>
+      <p>Prompt: {prompt}</p>
 
       {currentDrawing ? (
         <div className='vertical'>

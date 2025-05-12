@@ -27,9 +27,7 @@ const BufferPage = () => {
     });
 
     socket.once('voting_display', (data) => {
-      navigate(`/${username}/${gameCode}/vote`, {
-          state: { prompt: data.prompt }
-      });
+      navigate(`/${username}/${gameCode}/vote`);
     });
 
     return () => {
