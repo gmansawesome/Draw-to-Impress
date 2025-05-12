@@ -13,7 +13,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone
 import os
 
-drawtime = 20
+drawtime = 120
 
 class UserView(ModelView):
     column_hide_backrefs = False
@@ -621,7 +621,7 @@ def voting_process(game_code):
             "imageData": drawing["imageData"],
             "playerName": drawing["playerName"]
         }, room=game_code)
-        eventlet.sleep(15)
+        eventlet.sleep(8)
 
     with app.app_context():
         game = Game.query.filter_by(code=game_code).first()
