@@ -32,39 +32,88 @@ const Whiteboard = ({ user }) => {
     return () => clearTimeout(timer);
   }, [timeLeft]);
 
+  // useEffect(() => {
+  //   socket.on('game_submit', (data) => {
+  //       console.log("GAME_SUBMIT RECEVIED")
+  //       if (data.state === 'submission') {
+  //           const canvas = canvasRef.current;
+  //           const imageData = canvas.toDataURL('image/png');
+
+  //           fetch(`${API_BASE}/submit-drawing`, {
+  //                   method: 'POST',
+  //                   headers: { 'Content-Type': 'application/json' },
+  //                   credentials: 'include',
+  //                   body: JSON.stringify({
+  //                   playerId: user.id,
+  //                   gameCode: gameCode,
+  //                   imageData: imageData
+  //               })
+  //           })
+  //           .then(res => res.json())
+  //           .then(data => {
+  //               console.log("Drawing submitted:", data);
+  //               navigate(`/${username}/${gameCode}/buffer`);
+  //           })
+  //           .catch(err => {
+  //               console.error("Error submitting drawing:", err);
+  //               navigate(`/${username}/${gameCode}/buffer`);
+  //           });
+  //       }
+  //   });
+
+  //   return () => {
+  //     socket.off('game_submit');
+  //   };
+  // }, [gameCode, username, user.id, navigate]);
+
+  const submitDrawing = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const imageData = canvas.toDataURL('image/png');
+
+    fetch(`${API_BASE}/submit-drawing`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        playerId: user.id,
+        gameCode: gameCode,
+        imageData: imageData
+      })
+    })
+      .then(res => res.json())
+      .then(data => {
+        console.log("Drawing submitted:", data);
+        navigate(`/${username}/${gameCode}/buffer`);
+      })
+      .catch(err => {
+        console.error("Error submitting drawing:", err);
+        navigate(`/${username}/${gameCode}/buffer`);
+      });
+  };
+
   useEffect(() => {
-    socket.on('game_submit', (data) => {
-        console.log("GAME_SUBMIT RECEVIED")
-        if (data.state === 'submission') {
-            const canvas = canvasRef.current;
-            const imageData = canvas.toDataURL('image/png');
+    if (timeLeft === 0) {
+      console.log("TIMER REACHED ZERO");
+      submitDrawing();
+    }
+  }, [timeLeft]);
 
-            fetch(`${API_BASE}/submit-drawing`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    credentials: 'include',
-                    body: JSON.stringify({
-                    playerId: user.id,
-                    gameCode: gameCode,
-                    imageData: imageData
-                })
-            })
-            .then(res => res.json())
-            .then(data => {
-                console.log("Drawing submitted:", data);
-                navigate(`/${username}/${gameCode}/buffer`);
-            })
-            .catch(err => {
-                console.error("Error submitting drawing:", err);
-                navigate(`/${username}/${gameCode}/buffer`);
-            });
-        }
-    });
+  useEffect(() => {
+    const handleGameSubmit = (data) => {
+      if (data.state === 'submission') {
+        console.log("GAME_SUBMIT RECEIVED");
+        submitDrawing();
+      }
+    };
 
+    socket.on('game_submit', handleGameSubmit);
     return () => {
-      socket.off('game_submit');
+      socket.off('game_submit', handleGameSubmit);
     };
   }, [gameCode, username, user.id, navigate]);
+
 
   const showCanvas = () => {
     const canvas = canvasRef.current;

@@ -13,6 +13,7 @@ import Whiteboard from './components/whiteboard';
 import BufferPage from './components/bufferpage';
 import VotePage from './components/votepage';
 import API_BASE from './components/apiConfig';
+import ResultPage from './components/resultpage';
 
 function AppContent() {
   const [user, setUser] = useState(null);
@@ -39,6 +40,9 @@ function AppContent() {
           }
           else if (data.state === 'voting') {
             navigate(`/${userData.username}/${data.gameCode}/vote`);
+          }
+          else if (data.state === 'results') {
+            navigate(`/${data.gameCode}/results`);
           }
           else {
             const path = data.role === 'host'
@@ -82,8 +86,8 @@ function AppContent() {
         <Route path="/:username/:gameCode/whiteboard" element={<PrivateRoute user={user}> <Whiteboard user={user} /> </PrivateRoute>} />
         <Route path="/:username/:gameCode/buffer" element={<PrivateRoute user={user}> <BufferPage user={user} /> </PrivateRoute>} />
         <Route path="/:username/:gameCode/vote" element={<PrivateRoute user={user}> <VotePage user={user} /> </PrivateRoute>} />
+        <Route path="/:gameCode/results" element={<ResultPage user={user} />}/>
       </Routes>
-
     </div>
   );
 }

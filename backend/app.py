@@ -12,14 +12,14 @@ import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone
 
-drawtime = 10
+drawtime = 20
 
 class UserView(ModelView):
     column_hide_backrefs = False
-    column_list = ["id", "username", "name", "hosted_games", "games", "drawing"]
+    column_list = ["id", "username", "name", "hosted_games", "games", "drawing", "votes"]
 class GameView(ModelView):
     column_hide_backrefs = False
-    column_list = ["id", "state", "code", "capacity", "host", "prompt", "start_time", "players", "drawings"]
+    column_list = ["id", "state", "code", "capacity", "host", "prompt", "start_time", "players", "drawings", "votes"]
 class GameSessionView(ModelView):
     column_hide_backrefs = False
     column_list = ["id", "player", "game"]
@@ -28,7 +28,10 @@ class PromptView(ModelView):
     column_list = ["id", "content", "active_games"]
 class DrawingView(ModelView):
     column_hide_backrefs = False
-    column_list = ["id", "player", "game"]
+    column_list = ["id", "player", "game", "votes"]
+class VoteView(ModelView):
+    column_hide_backrefs = False
+    column_list = ["id", "voter", "drawing", "game", "score"]
 
 app = Flask(__name__)
 app.secret_key = "secret"
@@ -47,6 +50,7 @@ class User(db.Model):
     hosted_games = db.relationship("Game", foreign_keys=lambda: [Game.host_id], backref="host", cascade="all, delete")
     games = db.relationship("GameSession", foreign_keys=lambda: [GameSession.player_id], backref="player", cascade="all, delete")
     drawing = db.relationship("Drawing", foreign_keys=lambda: [Drawing.player_id], backref="player", cascade="all, delete")
+    votes = db.relationship("Vote", foreign_keys=lambda: [Vote.voter_id], backref="voter", cascade="all, delete")
 
     def set_password(self, raw_password):
         self.password = generate_password_hash(raw_password)
@@ -68,6 +72,7 @@ class Game(db.Model):
 
     players = db.relationship("GameSession", foreign_keys=lambda: [GameSession.game_id], backref="game", cascade="all, delete")
     drawings = db.relationship("Drawing", foreign_keys=lambda: [Drawing.game_id], backref="game", cascade="all, delete")
+    votes = db.relationship("Vote", foreign_keys=lambda: [Vote.game_id], backref="game", cascade="all, delete")
 
     def __str__(self):
         return f"Game {self.id}"
@@ -95,8 +100,20 @@ class Drawing(db.Model):
     game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
     image_data = db.Column(db.Text, nullable=False)
 
+    votes = db.relationship("Vote", foreign_keys=lambda: [Vote.drawing_id], backref="drawing", cascade="all, delete")
+
     def __str__(self):
         return f"P-{self.player_id}"
+    
+class Vote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    voter_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    drawing_id = db.Column(db.Integer, db.ForeignKey("drawing.id"))
+    game_id = db.Column(db.Integer, db.ForeignKey("game.id"))
+    score = db.Column(db.Integer)
+
+    def __repr__(self):
+        return f"<Vote by User {self.voter_id} for Drawing {self.drawing_id}>"
 
 def main():
     with app.app_context():
@@ -465,6 +482,70 @@ def submit_drawing():
 
     return jsonify({"success": True, "message": "Drawing submitted"})
 
+@app.route('/vote', methods=['POST'])
+def cast_vote():
+    data = request.get_json()
+    voter_id = data.get('voterId')
+    drawing_id = data.get('drawingId')
+    game_code = data.get('gameCode')
+    score = data.get('score')
+
+    if not all([voter_id, drawing_id, game_code, score is not None]):
+        return jsonify({"success": False, "message": "Missing vote data"}), 400
+
+    game = Game.query.filter_by(code=game_code).first()
+    if not game:
+        return jsonify({"success": False, "message": "Game not found"}), 404
+
+    existing_vote = Vote.query.filter_by(
+        voter_id=voter_id,
+        drawing_id=drawing_id,
+        game_id=game.id
+    ).first()
+    if existing_vote:
+        return jsonify({"success": False, "message": "You have already voted for this drawing."}), 409
+
+    vote = Vote(
+        voter_id=voter_id,
+        drawing_id=drawing_id,
+        game_id=game.id,
+        score=score
+    )
+    db.session.add(vote)
+    db.session.commit()
+
+    return jsonify({"success": True, "message": "Vote recorded!"}), 200
+
+@app.route('/game-results/<string:game_code>', methods=['GET'])
+def game_results(game_code):
+    game = Game.query.filter_by(code=game_code).first()
+    if not game:
+        return jsonify({"success": False, "message": "Game not found"}), 404
+
+    results = db.session.query(
+        Drawing.id,
+        User.username,
+        Drawing.image_data,
+        db.func.sum(Vote.score).label("total_votes")
+    ).join(User, Drawing.player_id == User.id
+    ).outerjoin(Vote, Drawing.id == Vote.drawing_id
+    ).filter(Drawing.game_id == game.id
+    ).group_by(Drawing.id
+    ).order_by(db.func.sum(Vote.score).desc().nullslast()).all()
+
+    return jsonify({
+        "success": True,
+        "results": [
+            {
+                "drawingId": row[0],
+                "username": row[1],
+                "imageData": row[2],
+                "totalVotes": row[3] or 0
+            }
+            for row in results
+        ]
+    })
+
 def get_time_left(game):
     if not game.start_time:
         return drawtime
@@ -479,39 +560,83 @@ def get_time_left(game):
 
 def game_monitor():
     while True:
+        eventlet.sleep(1)
         with app.app_context():
             # print("CYCLE")
             games = Game.query.filter_by(state="whiteboard").all()
             for game in games:
-                if not get_time_left(game):
-                    print(f"Emitting game_submit for {game.code}")
-                    game.state = "submission"
-                    db.session.commit()
-                    socketio.emit("game_submit", {
-                        "gameCode": game.code,
-                        "state": "submission"
-                    }, room=game.code)
+                if (get_time_left(game)) <= 0:
                     socketio.start_background_task(voting_transition, game.code)
-        eventlet.sleep(1)
-
+                    for x in range(10):
+                        eventlet.sleep(.5)
+                        print(f"Emitting game_submit for {game.code}")
+                        game.state = "submission"
+                        db.session.commit()
+                        socketio.emit("game_submit", {
+                            "gameCode": game.code,
+                            "state": "submission"
+                        }, room=game.code)
+                    
 def voting_transition(game_code):
-    eventlet.sleep(10)
+    eventlet.sleep(5)
     with app.app_context():
         game = Game.query.filter_by(code=game_code).first()
         if game and game.state == "submission":
-            game.state = "voting"
-            db.session.commit()
+            socketio.start_background_task(voting_process, game.code)
+            for x in range(10):
+                eventlet.sleep(.5)
+                print(f"Emitting game_vote for {game.code}")
+                game.state = "voting"
+                db.session.commit()
+                socketio.emit("game_vote", {
+                    "gameCode": game.code,
+                    "state": "voting"
+                }, room=game.code)
 
-            socketio.emit("game_vote", {
-                "gameCode": game.code,
-                "state": "voting"
-            }, room=game.code)
+def voting_process(game_code):
+    eventlet.sleep(5)
+    with app.app_context():
+        game = Game.query.filter_by(code=game_code).first()
+        if not game:
+            return
+        drawings = Drawing.query.filter_by(game_id=game.id).all()
+        if not drawings:
+            return
 
-# def voting_process(game_code):
-#     while True:
-#         with app.app_context():
-#             eventlet.sleep(5)
+        submissions = []
+        for drawing in drawings:
+            submissions.append({
+                "drawingId": drawing.id,
+                "imageData": drawing.image_data,
+                "playerId": drawing.player_id,
+                "playerName": drawing.player.name
+            })
 
+    for drawing in submissions:
+        print(f"Emittting drawing {drawing['drawingId']}")
+        socketio.emit("voting_display", {
+            "drawingId": drawing["drawingId"],
+            "imageData": drawing["imageData"],
+            "playerName": drawing["playerName"]
+        }, room=game_code)
+        eventlet.sleep(15)
+
+    with app.app_context():
+        game = Game.query.filter_by(code=game_code).first()
+        game.state = "results"
+        db.session.commit()
+
+        print(f"Emittting voting end")
+        socketio.emit("voting_end", {
+            "gameCode": game_code,
+            "state": game.state
+        }, room=game_code)
+
+        eventlet.sleep(10)
+        GameSession.query.filter_by(game_id=game.id).delete()
+        Vote.query.filter_by(game_id=game.id).delete()
+        db.session.commit()
+        
 
 admin = Admin(app)
 admin.add_view(UserView(User, db.session))
@@ -519,6 +644,7 @@ admin.add_view(GameView(Game, db.session))
 admin.add_view(GameSessionView(GameSession, db.session))
 admin.add_view(PromptView(Prompt, db.session))
 admin.add_view(DrawingView(Drawing, db.session))
+admin.add_view(VoteView(Vote, db.session))
 
 if __name__ == '__main__':
     main()

@@ -1,18 +1,100 @@
-import React from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import socket from './socket';
 import API_BASE from './apiConfig';
 
-const VotePage = () => {
+const VotePage = ({ user }) => {
   const { username, gameCode } = useParams();
+  const navigate = useNavigate();
+
+  const [currentDrawing, setCurrentDrawing] = useState(null);
+  const [hasVoted, setHasVoted] = useState(false);
+  const [selectedVote, setSelectedVote] = useState(null);
+
+  useEffect(() => {
+    socket.on('voting_display', (data) => {
+      setCurrentDrawing(data);
+      setHasVoted(false);
+      setSelectedVote(null);
+    });
+
+    socket.on('voting_end', (data) => {
+      if (data.gameCode === gameCode) {
+        navigate(`/${gameCode}/results`);
+      }
+    });
+
+    return () => {
+      socket.off('voting_display');
+      socket.off('voting_end');
+    };
+  }, [gameCode, navigate]);
+
+  const handleVote = async (score) => {
+    if (!currentDrawing || hasVoted) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          voterId: user.id,
+          gameCode,
+          drawingId: currentDrawing.drawingId,
+          score: score
+        })
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setHasVoted(true);
+        setSelectedVote(score);
+      } else {
+        alert(data.message || 'Vote failed.');
+      }
+    } catch (err) {
+      console.error("Error voting:", err);
+    }
+  };
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Voting Phase</h2>
-      <p style={styles.text}>
-        Welcome, <strong>{username}</strong>!<br />
-        Game Code: <strong>{gameCode}</strong>
-      </p>
-      <p style={styles.subtext}>This is a placeholder for the voting interface.</p>
+      <h2>Voting Phase</h2>
+      <p>Game Code: <strong>{gameCode}</strong></p>
+
+      {currentDrawing ? (
+        <div>
+          <h3>By: {currentDrawing.playerName}</h3>
+          <img
+            src={currentDrawing.imageData}
+            alt="Drawing"
+            style={styles.image}
+          />
+          <p>Rate this drawing (0–4):</p>
+          <div style={styles.buttonRow}>
+            {[1, 2, 3, 4, 5].map(score => (
+              <button
+                key={score}
+                onClick={() => handleVote(score)}
+                disabled={hasVoted}
+                style={
+                  hasVoted && selectedVote === score
+                    ? styles.selectedButton
+                    : hasVoted
+                    ? styles.disabledButton
+                    : styles.voteButton
+                }
+              >
+                {score}
+              </button>
+            ))}
+          </div>
+          {hasVoted && <p>You voted: {selectedVote}</p>}
+        </div>
+      ) : (
+        <p>Waiting for the next drawing...</p>
+      )}
     </div>
   );
 };
@@ -21,20 +103,48 @@ const styles = {
   container: {
     fontFamily: 'sans-serif',
     textAlign: 'center',
-    paddingTop: '15vh',
+    paddingTop: '5vh',
   },
-  title: {
-    fontSize: '2.5rem',
+  image: {
+    maxWidth: '80%',
+    maxHeight: '60vh',
+    margin: '2rem 0',
+    border: '2px solid #ccc',
+    borderRadius: '8px',
   },
-  text: {
-    fontSize: '1.2rem',
-    marginTop: '1rem',
+  buttonRow: {
+    display: 'flex',
+    justifyContent: 'center',
+    gap: '1rem',
+    margin: '1rem 0',
   },
-  subtext: {
-    fontSize: '1rem',
-    marginTop: '2rem',
-    fontStyle: 'italic',
-    color: '#666',
+  voteButton: {
+    fontSize: '1.5rem',
+    padding: '0.6rem 1.2rem',
+    backgroundColor: '#007bff',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  disabledButton: {
+    fontSize: '1.5rem',
+    padding: '0.6rem 1.2rem',
+    backgroundColor: '#6c757d',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'not-allowed',
+  },
+  selectedButton: {
+    fontSize: '1.5rem',
+    padding: '0.6rem 1.2rem',
+    backgroundColor: '#28a745',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '6px',
+    fontWeight: 'bold',
+    cursor: 'not-allowed',
   }
 };
 
