@@ -7,6 +7,89 @@
   pointer-events: none;
 }
 
+.form-pink-background {
+  background-color: rgb(255, 204, 245);
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+
+
+  /* flex-direction: column; */
+
+  
+}
+
+@keyframes fade {
+  to {
+    opacity: 1;
+  }
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  background-color: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin: 20px;
+  opacity: 0;
+  animation: fade 1s ease-in forwards;
+  animation: fade 1s ease-out forwards;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 400px;
+  background-color: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin: 20px;
+  opacity: 0;
+  animation: fade 1s ease-in forwards;
+  animation: fade 1s ease-out forwards;
+}
+
+form label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: bold;
+  color: #555;
+}
+
+form input, form select, form button {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 18px;
+  border-radius: 8px;
+  border: 1px solid #ddd; 
+  font-size: 16px;
+  box-sizing: border-box;
+  background-color: #f9f9f9;
+}
+
+form button {
+  background-color: #ff4ee7;
+  color: white;
+  font-size: 16px;
+  font-weight: bold;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+form button:hover {
+  background-color: #83196e;
+}
+
+
 @media (prefers-reduced-motion: no-preference) {
   .App-logo {
     animation: App-logo-spin infinite 20s linear;
@@ -24,6 +107,8 @@
   color: white;
 }
 
+
+
 .App-link {
   color: #61dafb;
 }
@@ -35,4 +120,70 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+html, body, #root{
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  /* overflow: hidden; */
+}
+.whiteboardFull {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  padding: 0px;
+  background-color: #ffbbee;
+}
+
+
+
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+}
+
+
+
+
+.canvas canvas {
+  width: 800px;
+  height: 550px;
+  border: 1px solid #ccc;
+  background: #fff;
+  overflow: hidden;
+}
+
+
+.undo img {
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin: 2px;
+}
+
+.undo.active {
+  border: 2px solid black;
+}
+
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px 20px;
+  background-color: #ffdce9;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  margin: 20px auto;
+  width: fit-content;
+}
+
+.vertical {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 }

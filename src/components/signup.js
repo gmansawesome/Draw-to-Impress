@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import API_BASE from './apiConfig';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -23,7 +22,7 @@ function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const response = await fetch(`${API_BASE}/signup`, {
+    const response = await fetch('http://127.0.0.1:5000/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded'
@@ -41,27 +40,29 @@ function Signup() {
   };
 
   return (
-    <div className="form-container">
-      <h2>Sign Up</h2>
-      {error && <p className="error">{error}</p>}
-      <form onSubmit={handleSubmit} autoComplete="off">
-        <label>First Name:</label>
-        <input type="text" name="FirstName" required value={formData.FirstName} onChange={handleChange} />
+    <div className="form-pink-background">
+      <div className="form-container">
+        <h2>Sign Up</h2>
+        {error && <p className="error">{error}</p>}
+        <form onSubmit={handleSubmit} autoComplete="off">
+          <label>First Name:</label>
+          <input type="text" name="FirstName" required value={formData.FirstName} onChange={handleChange} />
 
-        <label>Last Name:</label>
-        <input type="text" name="LastName" required value={formData.LastName} onChange={handleChange} />
+          <label>Last Name:</label>
+          <input type="text" name="LastName" required value={formData.LastName} onChange={handleChange} />
 
-        <label>Username:</label>
-        <input type="text" name="Username" required value={formData.Username} onChange={handleChange} />
+          <label>Username:</label>
+          <input type="text" name="Username" required value={formData.Username} onChange={handleChange} />
 
-        <label>Password:</label>
-        <input type="password" name="Password" required value={formData.Password} onChange={handleChange} />
+          <label>Password:</label>
+          <input type="password" name="Password" required value={formData.Password} onChange={handleChange} />
 
-        <button type="submit">Sign Up</button>
-      </form>
-      <p>
-        Already have an account? <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Log in</a>
-      </p>
+          <button type="submit">Sign Up</button>
+        </form>
+        <p>
+          Already have an account? <a href="/" onClick={(e) => { e.preventDefault(); navigate('/'); }}>Log in</a>
+        </p>
+      </div>
     </div>
   );
 }

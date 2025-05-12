@@ -10,6 +10,7 @@ const VotePage = ({ user }) => {
   const [currentDrawing, setCurrentDrawing] = useState(null);
   const [hasVoted, setHasVoted] = useState(false);
   const [selectedVote, setSelectedVote] = useState(null);
+  const [timeLeft, setTimeLeft] = useState(15);
 
   useEffect(() => {
     socket.on('voting_display', (data) => {
@@ -29,6 +30,23 @@ const VotePage = ({ user }) => {
       socket.off('voting_end');
     };
   }, [gameCode, navigate]);
+
+  useEffect(() => {
+    if (!currentDrawing) return;
+
+    setTimeLeft(15);
+    const interval = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentDrawing]);
 
   const handleVote = async (score) => {
     if (!currentDrawing || hasVoted) return;
@@ -66,6 +84,7 @@ const VotePage = ({ user }) => {
       {currentDrawing ? (
         <div>
           <h3>By: {currentDrawing.playerName}</h3>
+          <p>Time left to vote: <strong>{timeLeft}s</strong></p>
           <img
             src={currentDrawing.imageData}
             alt="Drawing"

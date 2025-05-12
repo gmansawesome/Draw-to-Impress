@@ -46,7 +46,7 @@ const styles = {
   container: {
     fontFamily: 'sans-serif',
     textAlign: 'center',
-    paddingTop: '5vh',
+    // paddingTop: '5vh',
   },
   title: {
     fontSize: '2.5rem',
@@ -59,7 +59,7 @@ const styles = {
     border: '1px solid #ccc',
     borderRadius: '8px',
     margin: '2rem auto',
-    padding: '1rem',
+    // padding: '1rem',
     maxWidth: '600px',
     backgroundColor: '#f9f9f9',
   },

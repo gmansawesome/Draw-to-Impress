@@ -2,7 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { useParams, useLocation, useNavigate  } from 'react-router-dom';
 import socket from './socket';
 import API_BASE from './apiConfig';
-import './whiteboard.css';
+import '../App.css';
 
 const Whiteboard = ({ user }) => {
   const { username, gameCode } = useParams();
@@ -13,7 +13,7 @@ const Whiteboard = ({ user }) => {
   const [color, setColor] = useState('#000000');
   const [lineWidth, setLineWidth] = useState(2);
   const navigate = useNavigate();
-
+  const [isErasing, setIsErasing] = useState(false);
   const location = useLocation();
   const prompt = location.state?.prompt;
 
@@ -32,39 +32,6 @@ const Whiteboard = ({ user }) => {
     return () => clearTimeout(timer);
   }, [timeLeft]);
 
-  // useEffect(() => {
-  //   socket.on('game_submit', (data) => {
-  //       console.log("GAME_SUBMIT RECEVIED")
-  //       if (data.state === 'submission') {
-  //           const canvas = canvasRef.current;
-  //           const imageData = canvas.toDataURL('image/png');
-
-  //           fetch(`${API_BASE}/submit-drawing`, {
-  //                   method: 'POST',
-  //                   headers: { 'Content-Type': 'application/json' },
-  //                   credentials: 'include',
-  //                   body: JSON.stringify({
-  //                   playerId: user.id,
-  //                   gameCode: gameCode,
-  //                   imageData: imageData
-  //               })
-  //           })
-  //           .then(res => res.json())
-  //           .then(data => {
-  //               console.log("Drawing submitted:", data);
-  //               navigate(`/${username}/${gameCode}/buffer`);
-  //           })
-  //           .catch(err => {
-  //               console.error("Error submitting drawing:", err);
-  //               navigate(`/${username}/${gameCode}/buffer`);
-  //           });
-  //       }
-  //   });
-
-  //   return () => {
-  //     socket.off('game_submit');
-  //   };
-  // }, [gameCode, username, user.id, navigate]);
 
   const submitDrawing = () => {
     const canvas = canvasRef.current;
@@ -116,6 +83,7 @@ const Whiteboard = ({ user }) => {
 
 
   const showCanvas = () => {
+      
     const canvas = canvasRef.current;
     const visible = VcontextRef.current;
     if (!visible)return;
@@ -135,69 +103,134 @@ const Whiteboard = ({ user }) => {
         });
         visible.stroke();
     });
+
+    strokesRef.current.forEach(stroke => {
+      const { type, color: strokeColor, lineWidth: strokeWidth, points } = stroke;
+      if (!points || points.length < 2) return;
+      visible.beginPath();
+    
+      visible.globalCompositeOperation = type === 'eraser' ? 'destination-out' : 'source-over';
+      visible.strokeStyle = type === 'eraser' ? 'rgba(0,0,0,1)' : strokeColor;
+      visible.lineWidth = strokeWidth;
+    
+      visible.moveTo(points[0].xRel * canvas.width, points[0].yRel * canvas.height);
+      points.forEach(({ xRel, yRel }) => {
+        visible.lineTo(xRel * canvas.width, yRel * canvas.height);
+      });
+    
+      visible.stroke();
+    });
   };
+
+  const handleUndo = () => {
+    if (strokesRef.current.length === 0) return;
+  
+    strokesRef.current.pop();
+  
+    const canvas = canvasRef.current;
+    const ctx = VcontextRef.current;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+    showCanvas();
+  };
+  
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    const parent = canvas.parentElement;
-
-    const resize = () => {
-        canvas.width = parent.clientWidth;
-        canvas.height = parent.clientHeight;
-        const context = canvas.getContext('2d');
-        context.lineCap = 'round';
-        context.lineJoine = 'round';
-        VcontextRef.current = context;
-        showCanvas();
-    }
-    resize();
-
-    window.addEventListener('resize', resize);
-    return () => window.removeEventListener('resize', resize);
+  
+    const fixedWidth = 800;
+    const fixedHeight = 600;
+    canvas.width = fixedWidth;
+    canvas.height = fixedHeight;
+    // let history = [];
+    const context = canvas.getContext('2d');
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+    VcontextRef.current = context;
+  
+    showCanvas();
   }, []);
+  
 
   const startDrawing = e => {
     const canvas = canvasRef.current;
+    const ctx = VcontextRef.current;
     const { offsetX, offsetY } = e.nativeEvent;
-    const xRel = offsetX/canvas.width;
-    const yRel = offsetY/canvas.height;
-    strokesRef.current.push({color, lineWidth, points: [{xRel,yRel}]});
+    const xRel = offsetX / canvas.width;
+    const yRel = offsetY / canvas.height;
+  
+    if (isErasing) {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = 'rgba(0,0,0,1)';
+      ctx.lineWidth = lineWidth;
+    
+      strokesRef.current.push({
+        type: 'eraser',
+        color: 'rgba(0,0,0,1)',
+        lineWidth,
+        points: [{ xRel, yRel }]
+      });
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+      strokesRef.current.push({
+        type: 'pen',
+        color,
+        lineWidth,
+        points: [{ xRel, yRel }]
+      });
+      ctx.lineWidth = lineWidth;
+      ctx.strokeStyle = color;
+    }      
+  
+    ctx.beginPath();
+    ctx.moveTo(offsetX, offsetY);
     isDrawingRef.current = true;
   };
 
+  
+
   const draw = e => {
     if (!isDrawingRef.current) return;
+
     const canvas = canvasRef.current;
+    const ctx = VcontextRef.current;
     const { offsetX, offsetY } = e.nativeEvent;
-    const xRel = offsetX/canvas.width;
-    const yRel = offsetY/canvas.height;
-    const currStroke = strokesRef.current[strokesRef.current.length-1];
-    currStroke.points.push({xRel,yRel});
-    showCanvas();
+    const xRel = offsetX / canvas.width;
+    const yRel = offsetY / canvas.height;
+  
+    const currStroke = strokesRef.current[strokesRef.current.length - 1];
+  
+    if (isErasing) {
+      ctx.lineTo(offsetX, offsetY);
+      ctx.stroke();
+      if (currStroke && currStroke.type === 'eraser') {
+        currStroke.points.push({ xRel, yRel });
+      }
+    } else {
+      ctx.lineTo(offsetX, offsetY);
+      ctx.stroke();
+      if (currStroke) {
+        currStroke.points.push({ xRel, yRel });
+      }
+    }
   };
+  
 
   const stopDrawing = () => {
     isDrawingRef.current = false;
-  };
-
-  const handleDownload = () => {
-    const canvas = canvasRef.current;
-    const image = canvas.toDataURL('image/png');
-    const link = document.createElement('a');
-    link.href = image;
-    link.download = `whiteboard-${username || 'drawing'}.png`;
-    link.click();
   };
 
   const formatTime = (seconds) => {
     const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+  };  
 
   return (
     <div className = "whiteboardFull">
-      <h2>Whiteboard</h2>
+      {/* <audio autoPlay loop>
+        <source src="/Music/Piano Music.mp3" type="audio/mpeg" />
+      </audio> */}
       <p><strong>Prompt:</strong> {prompt}</p>
       <p><strong>Time Left:</strong> {formatTime(timeLeft)}</p>
       <div className = "controls">
@@ -220,7 +253,21 @@ const Whiteboard = ({ user }) => {
           />
           <span>{lineWidth}</span>
         </label>
-      </div>
+          <button onClick={() => setIsErasing(false)}
+            className={`undo ${isErasing ? '' : 'active'}`}
+          >
+            <img src="/images/pen.png" width="30" height="30" />
+          </button>
+          <button onClick={() => setIsErasing(true)}
+            className={`undo ${isErasing ? 'active' : ''}`}
+          
+          >
+            <img src="/images/eraser.png" width="30" height="30"/>
+          </button>
+          <button onClick={handleUndo} className="undo">
+            <img src="/images/undo.png" width="30" height="30" />
+          </button>
+          </div>
 
       <div className = "canvas">
         <canvas
@@ -230,15 +277,6 @@ const Whiteboard = ({ user }) => {
             onMouseUp={stopDrawing}
             onMouseLeave={stopDrawing}
         />
-      </div>
-      
-      <div className = 'download'>
-        <button
-            className='download-button'
-            onClick={handleDownload}
-        >
-            Download as PNG
-        </button>
       </div>
     </div>
   );

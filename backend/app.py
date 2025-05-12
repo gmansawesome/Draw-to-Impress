@@ -651,4 +651,4 @@ if __name__ == '__main__':
         db.create_all()
 
     socketio.start_background_task(game_monitor)
-    socketio.run(app, async_mode="eventlet", debug=True)
+    socketio.run(app, debug=True)
