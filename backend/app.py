@@ -623,7 +623,7 @@ def voting_process(game_code):
             "imageData": drawing["imageData"],
             "playerName": drawing["playerName"]
         }, room=game_code)
-        eventlet.sleep(8)
+        eventlet.sleep(5)
 
     with app.app_context():
         game = Game.query.filter_by(code=game_code).first()
