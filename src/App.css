@@ -8,11 +8,17 @@
 }
 
 .form-pink-background {
-  background-color: rgb(230, 142, 212);
+  background-color: rgb(255, 204, 245);
   height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
+
+
+
+  /* flex-direction: column; */
+
+  
 }
 
 @keyframes fade {
@@ -68,7 +74,7 @@ form input, form select, form button {
 }
 
 form button {
-  background-color: #007BFF;
+  background-color: #ff4ee7;
   color: white;
   font-size: 16px;
   font-weight: bold;
@@ -80,7 +86,7 @@ form button {
 }
 
 form button:hover {
-  background-color: #0056b3;
+  background-color: #83196e;
 }
 
 
@@ -127,7 +133,7 @@ html, body, #root{
   flex-direction: column;
   height: 100vh;
   padding: 10px;
-  background-color: #fefefe;
+  background-color: #ffbbee;
 }
 
 .canvas canvas {
@@ -156,38 +162,32 @@ html, body, #root{
 }
 
 
-.download {
-  flex-shrink: 0;
-  padding: 16px;
-  background: #f9f9f9;
-  border-top: 1px solid #ddd;
-  text-align: center;
-}
-
-.download-button {
-  padding: 8px 16px;
-  font-size: 1rem;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-
-.download-button:hover {
-  background: #0056b3;
-}
-
 .undo img {
   cursor: pointer;
   transition: transform 0.2s;
   margin: 2px;
 }
+
 .undo.active {
-  height: 100px;
+  border: 2px solid black;
 }
 
-.undo img:hover {
-  transform: scale(1.1);
+
+.controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 10px 20px;
+  background-color: #ffdce9;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  margin: 20px auto;
+  width: fit-content;
+}
+
+.vertical {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
 }

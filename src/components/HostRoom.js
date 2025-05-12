@@ -1,13 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 
 import '../App.css';
 
 const HostRoom = ({ user }) => {
-  const [gameCode, setGameCode] = useState('');
-  const navigate = useNavigate();
-    const { courseID, studentId } = useParams();
     const canvasRef = useRef(null);
     const VcontextRef = useRef(null);
     const strokesRef = useRef([]);
@@ -68,7 +64,6 @@ const HostRoom = ({ user }) => {
       showCanvas();
     };
     
-    
 
     useEffect(() => {
       const canvas = canvasRef.current;
@@ -77,7 +72,7 @@ const HostRoom = ({ user }) => {
       const fixedHeight = 600;
       canvas.width = fixedWidth;
       canvas.height = fixedHeight;
-      let history = [];
+      // let history = [];
       const context = canvas.getContext('2d');
       context.lineCap = 'round';
       context.lineJoin = 'round';
@@ -126,6 +121,7 @@ const HostRoom = ({ user }) => {
   
     const draw = e => {
       if (!isDrawingRef.current) return;
+
       const canvas = canvasRef.current;
       const ctx = VcontextRef.current;
       const { offsetX, offsetY } = e.nativeEvent;
@@ -153,23 +149,14 @@ const HostRoom = ({ user }) => {
     const stopDrawing = () => {
       isDrawingRef.current = false;
     };
-  
-    const handleDownload = () => {
-      const canvas = canvasRef.current;
-      const image = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `whiteboard-${courseID || 'drawing'}.png`;
-      link.click();
-    };
 
     
 
   return (
     <div className = "whiteboardFull">
-      <audio autoPlay loop>
+      {/* <audio autoPlay loop>
         <source src="/Music/Piano Music.mp3" type="audio/mpeg" />
-      </audio>
+      </audio> */}
       <h2>Whiteboard</h2>
       <div className = "controls">
         <label>
@@ -191,14 +178,16 @@ const HostRoom = ({ user }) => {
           />
           <span>{lineWidth}</span>
         </label>
-          <button onClick={() => setIsErasing(false)}className="undo">
+          <button onClick={() => setIsErasing(false)}
+            className={`undo ${isErasing ? '' : 'active'}`}
+          >
             <img src="/images/pen.png" width="30" height="30" />
           </button>
           <button onClick={() => setIsErasing(true)}
-            className={`undo${isErasing ? 'active' : ''}`}
+            className={`undo ${isErasing ? 'active' : ''}`}
           
           >
-            <img src="/images/eraser.png" width="30" height="30" align-items= "center"/>
+            <img src="/images/eraser.png" width="30" height="30"/>
           </button>
           <button onClick={handleUndo} className="undo">
             <img src="/images/undo.png" width="30" height="30" />
@@ -213,15 +202,6 @@ const HostRoom = ({ user }) => {
             onMouseUp={stopDrawing}
             onMouseLeave={stopDrawing}
         />
-      </div>
-      
-      <div className = 'download'>
-        <button
-            className='download-button'
-            onClick={handleDownload}
-        >
-            Download as PNG
-        </button>
       </div>
     </div>
   );

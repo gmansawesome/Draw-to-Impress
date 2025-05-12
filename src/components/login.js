@@ -47,6 +47,9 @@ const Login = ({ onLogin }) => {
   return (
     
     <div className='form-pink-background'>
+        <div className="vertical">
+          <img src="/images/Title.png" width="1024px" height="196px"/>
+
       <div className="login-container">
         <h2>Login</h2>
         {error && <div className="error">{error}</div>}
@@ -74,6 +77,7 @@ const Login = ({ onLogin }) => {
         <div className="signup-link">
           <p>Don't have an account? <a href="/signup" onClick={(e) => { e.preventDefault(); navigate('/signup'); }}>Sign up</a></p>
         </div>
+      </div>
       </div>
     </div>
   );
