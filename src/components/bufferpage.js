@@ -24,13 +24,18 @@ const BufferPage = () => {
       }
     });
 
+    socket.once('voting_display', (data) => {
+      navigate(`/${username}/${gameCode}/vote`);
+    });
+
     return () => {
       socket.off('game_vote');
+      socket.off('voting_display');
     };
   }, [gameCode, username, navigate]);
 
   return (
-    <div className="buffer-container">
+    <div className='form-pink-background'>
       <h2>Collecting drawings{dots}</h2>
     </div>
   );

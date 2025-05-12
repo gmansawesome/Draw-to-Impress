@@ -20,8 +20,14 @@ const ResultPage = () => {
   }, [gameCode]);
 
   return (
+    <div className="form-green-background">
+          <div className="vertical">
+
+          <img src="/images/Results.png" width="1024px" height="196px"/>
     <div style={styles.container}>
-      <h2 style={styles.title}>Game Results</h2>
+    <button style={styles.button} onClick={() => navigate('/lobby')}>
+        Back to Lobby
+      </button>
       <p style={styles.text}>
         Player: <strong>{username}</strong><br />
         Game Code: <strong>{gameCode}</strong>
@@ -34,10 +40,8 @@ const ResultPage = () => {
           <img src={result.imageData} alt="Drawing" style={styles.image} />
         </div>
       ))}
-
-      <button style={styles.button} onClick={() => navigate('/lobby')}>
-        Back to Lobby
-      </button>
+    </div>
+      </div>
     </div>
   );
 };
@@ -72,7 +76,7 @@ const styles = {
     marginTop: '2rem',
     padding: '0.75rem 2rem',
     fontSize: '1rem',
-    backgroundColor: '#007bff',
+    backgroundColor: '#008000',
     color: '#fff',
     border: 'none',
     borderRadius: '6px',

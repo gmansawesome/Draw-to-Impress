@@ -65,18 +65,24 @@ const HostRoom = ({ user }) => {
   };
 
   return (
-    <div className="host-room">
+    <div className="lobby-container">
+    <div className="join-section">
       <h2>Game Lobby</h2>
       <p>Game Code: {gameCode}</p>
-      <p>Username: {username}</p>
+      <p>Host: {username}</p>
       <h3>Players:</h3>
-      <ul>
+      <ul className="player-list">
         {players.map((player) => (
-          <li key={player.id}>{player.username}</li>
+          <li key={player.id} className="player-item">
+            {player.username}
+          </li>
         ))}
       </ul>
-      <button onClick={handleStartGame}>Start Game</button>
-      <button onClick={handleLeaveGame}>Disband Game</button>
+
+      <button className='regular' onClick={handleStartGame}>Start Game</button>
+      <button className='regular'onClick={handleLeaveGame}>Disband Game</button>
+
+    </div>
     </div>
   );
 

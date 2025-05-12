@@ -58,18 +58,21 @@ const PlayerRoom = ({ user }) => {
   };
 
   return (
-    <div className="player-room">
+    <div className="lobby-container">
+    <div className="join-section">
       <h2>Game Lobby</h2>
       <p>Game Code: {gameCode}</p>
-      <p>Username: {username}</p>
       <h3>Players:</h3>
-      <ul>
+      <ul className="player-list">
         {players.map((player) => (
-          <li key={player.id}>{player.username}</li>
+          <li key={player.id} className="player-item">
+            {player.username}
+          </li>
         ))}
       </ul>
-      <button onClick={handleLeaveGame}>Leave Game</button>
+      <button className='regular' onClick={handleLeaveGame}>Leave Game</button>
       <p>Waiting for host to start the game...</p>
+    </div>
     </div>
   );
 };

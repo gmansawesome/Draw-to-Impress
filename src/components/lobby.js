@@ -55,22 +55,23 @@ const Lobby = ({ user }) => {
 
   return (
     <div className="lobby-container">
-      <h2>Draw to Impress (Provisional)</h2>
-
+        <div className="vertical">
+        <img src="/images/Title.png" width="1024px" height="196px"/>
+      
       <div className="join-section">
         <h3>Join a Game</h3>
         <input
+          className='input_code'
           type="text"
           placeholder="Enter game code"
           value={gameCode}
           onChange={(e) => setGameCode(e.target.value)}
         />
-        <button onClick={handleJoinGame}>Join</button>
-      </div>
+        <button className='regular' onClick={handleJoinGame}>Join</button>
 
-      <div className="host-section">
         <h3>Or</h3>
-        <button onClick={handleHostGame}>Host a Game</button>
+        <button className='regular' onClick={handleHostGame}>Host a Game</button>
+      </div>
       </div>
     </div>
   );

@@ -77,44 +77,49 @@ const VotePage = ({ user }) => {
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Voting Phase</h2>
+    // <div className='form-justpink-background'>
+    <div className='form-pink2-background'>
+      <div className='vertical'>
+
+      <img src="/images/Voting.png" width="1024px" height="196px"/>
       <p>Game Code: <strong>{gameCode}</strong></p>
 
       {currentDrawing ? (
-        <div>
+        <div className='vertical'>
           <h3>By: {currentDrawing.playerName}</h3>
           <p>Time left to vote: <strong>{timeLeft}s</strong></p>
-          <img
-            src={currentDrawing.imageData}
-            alt="Drawing"
-            style={styles.image}
-          />
-          <p>Rate this drawing (0–4):</p>
+          <p>Rate this drawing (0–5):</p>
           <div style={styles.buttonRow}>
             {[1, 2, 3, 4, 5].map(score => (
               <button
-                key={score}
-                onClick={() => handleVote(score)}
-                disabled={hasVoted}
-                style={
-                  hasVoted && selectedVote === score
-                    ? styles.selectedButton
-                    : hasVoted
-                    ? styles.disabledButton
-                    : styles.voteButton
-                }
+              key={score}
+              onClick={() => handleVote(score)}
+              disabled={hasVoted}
+              style={
+                hasVoted && selectedVote === score
+                ? styles.selectedButton
+                : hasVoted
+                ? styles.disabledButton
+                : styles.voteButton
+              }
               >
                 {score}
               </button>
             ))}
           </div>
           {hasVoted && <p>You voted: {selectedVote}</p>}
+          <img
+            src={currentDrawing.imageData}
+            alt="Drawing"
+            style={styles.image}
+            />
         </div>
       ) : (
         <p>Waiting for the next drawing...</p>
       )}
     </div>
+    </div>
+    // </div>
   );
 };
 
@@ -125,6 +130,7 @@ const styles = {
     paddingTop: '5vh',
   },
   image: {
+    backgroundColor: '#FFFFFF',
     maxWidth: '80%',
     maxHeight: '60vh',
     margin: '2rem 0',
