@@ -613,20 +613,20 @@ def voting_process(game_code):
             })
 
     for drawing in submissions:
-        print(f"Emittting drawing {drawing['drawingId']}")
+        print(f"Emitting drawing {drawing['drawingId']}")
         socketio.emit("voting_display", {
             "drawingId": drawing["drawingId"],
             "imageData": drawing["imageData"],
             "playerName": drawing["playerName"]
         }, room=game_code)
-        eventlet.sleep(15)
+        eventlet.sleep(20)
 
     with app.app_context():
         game = Game.query.filter_by(code=game_code).first()
         game.state = "results"
         db.session.commit()
 
-        print(f"Emittting voting end")
+        print(f"Emitting voting end")
         socketio.emit("voting_end", {
             "gameCode": game_code,
             "state": game.state
@@ -651,4 +651,4 @@ if __name__ == '__main__':
         db.create_all()
 
     socketio.start_background_task(game_monitor)
-    socketio.run(app, async_mode="eventlet", debug=True)
+    socketio.run(app, debug=True)
