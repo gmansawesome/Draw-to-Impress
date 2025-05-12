@@ -91,7 +91,7 @@ const VotePage = ({ user }) => {
 
       {currentDrawing ? (
         <div className='vertical'>
-          <p>Rate {currentDrawing.playerName}'s drawing (1–5) | Time left: <strong>{timeLeft}s</strong></p>
+          <p>Rate <strong>{currentDrawing.playerName}</strong>'s drawing (1–5) | Time left: <strong>{timeLeft}s</strong></p>
           <div style={styles.buttonRow}>
             {[1, 2, 3, 4, 5].map(score => (
               <button
