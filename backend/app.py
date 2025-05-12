@@ -33,13 +33,34 @@ class VoteView(ModelView):
     column_hide_backrefs = False
     column_list = ["id", "voter", "drawing", "game", "score"]
 
-app = Flask(__name__)
-app.secret_key = "secret"
-CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app = None
 db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
+
+def create_app():
+    app = Flask(__name__)
+    app.secret_key = "secret"
+    CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///app.db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    db.init_app(app)
+    socketio.init_app(app, cors_allowed_origins="*")
+
+    with app.app_context():
+        db.create_all()
+        socketio.start_background_task(game_monitor)
+
+    # Register views here
+    admin = Admin(app)
+    admin.add_view(UserView(User, db.session))
+    admin.add_view(GameView(Game, db.session))
+    admin.add_view(GameSessionView(GameSession, db.session))
+    admin.add_view(PromptView(Prompt, db.session))
+    admin.add_view(DrawingView(Drawing, db.session))
+    admin.add_view(VoteView(Vote, db.session))
+
+    return app
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -562,7 +583,7 @@ def game_monitor():
     while True:
         eventlet.sleep(1)
         with app.app_context():
-            # print("CYCLE")
+            print("CYCLE")
             games = Game.query.filter_by(state="whiteboard").all()
             for game in games:
                 if (get_time_left(game)) <= 0:
@@ -637,17 +658,7 @@ def voting_process(game_code):
         Vote.query.filter_by(game_id=game.id).delete()
         db.session.commit()
         
-
-admin = Admin(app)
-admin.add_view(UserView(User, db.session))
-admin.add_view(GameView(Game, db.session))
-admin.add_view(GameSessionView(GameSession, db.session))
-admin.add_view(PromptView(Prompt, db.session))
-admin.add_view(DrawingView(Drawing, db.session))
-admin.add_view(VoteView(Vote, db.session))
-
-print("Top-level code executing...")
-socketio.start_background_task(game_monitor)
+app = create_app()
 
 if __name__ == '__main__':
     with app.app_context():
