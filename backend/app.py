@@ -11,8 +11,9 @@ import random
 import string
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone
+import os
 
-drawtime = 120
+drawtime = 20
 
 class UserView(ModelView):
     column_hide_backrefs = False
@@ -559,10 +560,10 @@ def get_time_left(game):
     return max(0, int(drawtime - elapsed))
 
 def game_monitor():
+    print("GAME MONITOR ONLINE")
     while True:
         eventlet.sleep(1)
         with app.app_context():
-            # print("CYCLE")
             games = Game.query.filter_by(state="whiteboard").all()
             for game in games:
                 if (get_time_left(game)) <= 0:
@@ -651,4 +652,5 @@ if __name__ == '__main__':
         db.create_all()
 
     socketio.start_background_task(game_monitor)
-    socketio.run(app, debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    socketio.run(app, host="0.0.0.0", port=port)

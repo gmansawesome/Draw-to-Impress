@@ -29,7 +29,6 @@ const ResultPage = () => {
         Back to Lobby
       </button>
       <p style={styles.text}>
-        Player: <strong>{username}</strong><br />
         Game Code: <strong>{gameCode}</strong>
       </p>
 
