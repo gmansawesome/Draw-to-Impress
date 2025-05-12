@@ -91,13 +91,7 @@ const VotePage = ({ user }) => {
 
       {currentDrawing ? (
         <div className='vertical'>
-          <h3>By: {currentDrawing.playerName}</h3>
-          <img
-            src={currentDrawing.imageData}
-            alt="Drawing"
-            style={styles.image}
-            />
-          <p>Rate this drawing (1–5) | Time left: <strong>{timeLeft}s</strong></p>
+          <p>Rate {currentDrawing.playerName}'s drawing (1–5) | Time left: <strong>{timeLeft}s</strong></p>
           <div style={styles.buttonRow}>
             {[1, 2, 3, 4, 5].map(score => (
               <button
@@ -116,6 +110,11 @@ const VotePage = ({ user }) => {
               </button>
             ))}
           </div>
+          <img
+            src={currentDrawing.imageData}
+            alt="Drawing"
+            style={styles.image}
+            />
         </div>
       ) : (
         <p>Waiting for the next drawing...</p>
