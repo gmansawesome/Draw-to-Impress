@@ -13,7 +13,7 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 from datetime import datetime, timezone
 import os
 
-drawtime = 120
+drawtime = 30
 
 class UserView(ModelView):
     column_hide_backrefs = False
@@ -128,7 +128,7 @@ class Vote(db.Model):
 
         # prompt = Prompt(content="Draw cars having a thanksgiving dinner")
 
-        # game = Game(state="lobby", code="ABC123", capacity=20, host=host, prompt=prompt)
+        # game = Game(state="lobby", code="ABC123", capacity=10, host=host, prompt=prompt)
 
         # session1 = GameSession(player=player1, game=game)
         # session2 = GameSession(player=player2, game=game)
@@ -216,7 +216,7 @@ def create_game():
     random_prompt = random.choice(prompts)
 
     game_code = generate_game_code()
-    game = Game(code=game_code, host_id=user.id, state='lobby', capacity=20, prompt_id=random_prompt.id )
+    game = Game(code=game_code, host_id=user.id, state='lobby', capacity=10, prompt_id=random_prompt.id )
     db.session.add(game)
     db.session.commit()
 
